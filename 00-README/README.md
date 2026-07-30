@@ -14,7 +14,7 @@
 | 01 | `01-Math-Foundation/` | 线性代数 / 概率 / 高斯 / Hoeffding / Loss 函数基础 | Stanford 官方 |
 | 02 | `02-Python-Tutorial/` | NumPy / Jupyter / class / OOP 教程 + Python Section 笔记 | Stanford 官方 |
 | 03 | `03-Lecture-Notes/` | 官方讲义 cs229-notes1～13 + 反向传播 / 深度学习 / 决策树 / 集成 | Stanford 官方 |
-| 04 | `04-Chapter-Notes-CN/` | 与 03 对应的中文讲义（笔记1～12 + 复习笔记1～6）+ 知识图谱 xmind | Sierkinhane (社区) |
+| 04 | `04-Chapter-Notes-CN/` | 与 03 对应的中文讲义 markdown 共 28 篇（notes1～13 + 14 篇专题译稿），配图已本地化到 `img/`，可离线阅读 | cycleuser (社区) |
 | 05 | `05-Slides/` | 官方 PPT：Boosting / 深度学习 / 弱监督 / ML Critique | Stanford 官方 |
 | 06 | `06-Topic-Notes/` | 专题讲义：SVM / EM / PCA / ICA / Factor Analysis / GMM / K-means / Learning Theory / RL 等 19 篇 | Stanford 官方 |
 | 07 | `07-Cheatsheets/` | 中英 cheat sheet + 算法可视化 GIF/JPG | afshinea + Sierkinhane |
@@ -36,20 +36,20 @@
 | --- | --- | --- | --- |
 | 0 | 课程预备（数学） | `01-Math-Foundation/cs229-linalg.pdf`, `cs229-prob.pdf` | — |
 | 0 | Python 入门 | `02-Python-Tutorial/` 全部 | — |
-| 1 | 监督学习与线性回归 | `03-Lecture-Notes/cs229-notes1.pdf`; 中文 `04-Chapter-Notes-CN/notes1.pdf` | PS1 |
-| 2 | 分类 / GDA / 朴素贝叶斯 | `03-Lecture-Notes/cs229-notes2.pdf`, `cs229-notes3.pdf`; `07-Cheatsheets/zh/cheatsheet-supervised-learning.pdf` | PS1 |
-| 3 | 广义线性模型 / 正则化 | `03-Lecture-Notes/cs229-notes4.pdf`; `06-Topic-Notes/Linear Model.pdf` | PS1 (Poisson) |
-| 4 | 核方法 / SVM | `03-Lecture-Notes/cs229-notes5.pdf`; `06-Topic-Notes/SVM.pdf`; `13-Section-Materials/cs229-cvxopt.pdf` | PS2 |
+| 1 | 监督学习与线性回归 | `03-Lecture-Notes/cs229-notes1.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes1.md` | PS1 |
+| 2 | 分类 / GDA / 朴素贝叶斯 | `03-Lecture-Notes/cs229-notes2.pdf`, `cs229-notes3.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes2.md`, `cs229-notes3.md`; `07-Cheatsheets/zh/cheatsheet-supervised-learning.pdf` | PS1 |
+| 3 | 广义线性模型 / 正则化 | `03-Lecture-Notes/cs229-notes4.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes4.md`; `06-Topic-Notes/Linear Model.pdf` | PS1 (Poisson) |
+| 4 | 核方法 / SVM | `03-Lecture-Notes/cs229-notes5.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes5.md`; `06-Topic-Notes/SVM.pdf`; `13-Section-Materials/cs229-cvxopt.md` | PS2 |
 | 5 | 模型选择 / 偏差-方差 / 学习理论 | `06-Topic-Notes/BiasVarianceAnalysis.pdf`, `LearningTheory.pdf`, `Regularization and model selection.pdf` | PS2 |
-| 6 | 决策树 / 集成 / Boosting | `03-Lecture-Notes/cs229-notes-dt.pdf`, `cs229-notes-ensemble.pdf`; `05-Slides/boosting.pdf`; `06-Topic-Notes/boosting.pdf` | — |
-| 7 | Neural Network / 反向传播 | `03-Lecture-Notes/cs229-notes-backprop.pdf`, `backprop.py`; `06-Topic-Notes/Regularization and model selection.pdf` | PS3 |
-| 8 | 深度学习实践 / CNN / DL Friday | `03-Lecture-Notes/cs229-notes-deep_learning.pdf`; `05-Slides/deep_learning.pdf`; `02-Python-Tutorial/cs229_deep_learning_friday.pptx` | PS3 |
-| 9 | 无监督：K-means / PCA / ICA | `03-Lecture-Notes/cs229-notes7a.pdf`, `cs229-notes8.pdf`; `06-Topic-Notes/K-means.pdf`, `PCA.pdf`, `ICA.pdf` | PS3 |
-| 10 | 高斯混合 / EM / 因子分析 | `03-Lecture-Notes/cs229-notes7b.pdf`, `cs229-notes9.pdf`; `06-Topic-Notes/EM.pdf`, `Mixtures of Gaussians.pdf`, `Factor analysis.pdf` | PS3 (GMM) |
+| 6 | 决策树 / 集成 / Boosting | `03-Lecture-Notes/cs229-notes-dt.pdf`, `cs229-notes-ensemble.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes-dt.md`, `cs229-notes-ensemble.md`, `cs229-boosting.md`; `05-Slides/boosting.pdf` | — |
+| 7 | Neural Network / 反向传播 | `03-Lecture-Notes/cs229-notes-backprop.pdf`, `backprop.py`; 中文 `04-Chapter-Notes-CN/cs229-notes-BP.md`; `06-Topic-Notes/Regularization and model selection.pdf` | PS3 |
+| 8 | 深度学习实践 / CNN / DL Friday | `03-Lecture-Notes/cs229-notes-deep_learning.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes-deep_learning.md`; `05-Slides/deep_learning.pdf`; `02-Python-Tutorial/cs229_deep_learning_friday.pptx` | PS3 |
+| 9 | 无监督：K-means / PCA / ICA | `03-Lecture-Notes/cs229-notes7a.pdf`, `cs229-notes8.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes7a.md`, `cs229-notes8.md`; `06-Topic-Notes/K-means.pdf`, `PCA.pdf`, `ICA.pdf` | PS3 |
+| 10 | 高斯混合 / EM / 因子分析 | `03-Lecture-Notes/cs229-notes7b.pdf`, `cs229-notes9.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes7b.md`, `cs229-notes9.md`; `06-Topic-Notes/EM.pdf`, `Mixtures of Gaussians.pdf`, `Factor analysis.pdf` | PS3 (GMM) |
 | 11 | ICA 实战 / RL 入门 | `06-Topic-Notes/ICA.pdf`, `reinforce_learning.pdf` | PS4 |
 | 12 | RL 算法 / 强化学习实践 | `03-Lecture-Notes/cs229-notes10.pdf`, `cs229-notes11.pdf` | PS4 (Cartpole) |
-| 13 | 序列模型：HMM | `13-Section-Materials/cs229-hmm.pdf` | — |
-| 14 | Gaussian Process 进阶 | `13-Section-Materials/cs229-gaussian_processes.pdf` | — |
+| 13 | 序列模型：HMM | `13-Section-Materials/cs229-hmm.pdf`; 中文 `04-Chapter-Notes-CN/cs229-notes-hmm.md` | — |
+| 14 | Gaussian Process 进阶 | `13-Section-Materials/cs229-gaussian_processes.pdf`; 中文 `04-Chapter-Notes-CN/cs229-gaussian_processes.md` | — |
 | — | 期末项目 | `11-Final-Project/poster/`, `11-Final-Project/report/`（118 个往年项目参考） | 自选方向 |
 
 ---
@@ -151,12 +151,23 @@
 | 来源 | 角色 |
 | --- | --- |
 | <https://github.com/maxim5/cs229-2018-autumn> | 主力仓库 — 课程官方完整资料 |
-| <https://github.com/Sierkinhane/CS229-ML-Implementation> | 从零算法实现 + 中文笔记 + 知识图谱 |
+| <https://github.com/Sierkinhane/CS229-ML-Implementation> | 从零算法实现 + 算法可视化 GIF + xmind 知识图谱 |
 | <https://github.com/afshinea/stanford-cs-229-machine-learning> | 多语言 cheat sheet（en/zh/zh-tw/ar/es/fa/fr/pt/tr/vi） |
 | <https://github.com/PKUFlyingPig/CS229> | 早期资料镜像（已并入本目录） |
-| <https://github.com/cycleuser/Stanford-CS-229> | cycleuser 中文译稿（已被 04-Chapter-Notes-CN 替代，未并入） |
+| <https://github.com/cycleuser/Stanford-CS-229> | cycleuser 中文译稿 markdown（已并入 04-Chapter-Notes-CN） |
 
 各仓库原始 README 保留在 `00-README/source-*-README.md`。
+
+---
+
+## ✍️ 你的课堂笔记
+
+`CS229_note.typ`（Typst 模板，双栏 + 页码 + 居中标题）放在仓库根目录，已为你预置封面（标题、作者邮箱、Abstract）与 Lec I 占位。建议用法：
+
+- 每听完一讲 → 在文件末尾 `#pagebreak()` 后新开一节，复用 `§ Lec N` 标题格式
+- 笔记内容建议同时对照 `03-Lecture-Notes/`（英文 PDF）与 `04-Chapter-Notes-CN/`（中文 markdown）整理要点
+- 编译：`typst compile CS229_note.typ CS229_note.pdf`
+- 由于 typst 没有原生 markdown 渲染，中文版的代码块 / 表格 / 公式可以手动复制粘贴，或者用 `typst` 的 `#raw()` / `#include()` 引入外部片段
 
 ---
 
@@ -180,5 +191,5 @@
 
 ---
 
-> 最后修改：2026-07-29  
+> 最后修改：2026-07-30  
 > 若发现链接失效或文件缺失，请对照来源仓库补救。Happy learning!

@@ -83,8 +83,35 @@
 === 3. Unsupervised Learning
 
 ~~~~Only inputs X and no outputs Y are given, asked to figure out interesting sturcture in the given data.
+\
+- Cocktail Party Problem
+- ICA : independent cmponent analysis
+
+
+=== 4. Reinforcement Learning
+
+~~~~Widely used in game playing and robotic applications.
 
 
 
+
+#pagebreak()
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec II]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+
+== Linear Regression
+\
+=== 1.
 
 
