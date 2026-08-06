@@ -1107,3 +1107,72 @@ $
 
 
 
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec V]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+
+
+
+== Generative Learning Algorithm
+
+\
+~~~~By now, the learning algorithms we've learned are called discriminative learning algorithms. (也就是说目前为止，我们讲过的学习算法的模型都是 $p(y | x ; theta)$，即给定 $x$ 下 $y$ 的条件分布，以 $theta$ 为参数)
+
+\
+
+=== 1. Guassian Discriminative Analysis
+\
+~~~~设想一个二分类问题，我们要学习基于一个动物的某个特征来辨别它是大象 $(y = 1)$ 还是小狗 $(y = 0)$。给定一个训练集，用逻辑回归或者基础版的感知器算法（perceptron algorithm）这样的一个算法能找到一条直线，作为区分开大象和小狗的边界。接下来，要辨别一个新的动物是大象还是小狗，程序就要检查这个新动物的值落到了划分出来的哪个区域中，然后根据所落到的区域来给出预测。（以上这样的 discriminative algorithm 本质就是在做MLE）
+
+\
+
+~~~~So rather than looking at both classes simultaneously and searching for a way to separate them, the generative algorithm builds a model of what each of the classes looks like.\
+~~~~At test time, it evaluates a new example against those two models and tries to see which of the two models mathces more closely against.
+\
+\
+
+- - Discriminative: \
+Learn *$p(y|x)$*, i.e. *$h_theta (x) = cases(0, 1)$* ~ directly. (the mapping : $x -> y$)
+
+\
+
+- - Generative:\
+Learn *$p(x|y)$* (given the class y, what the feature x will be like)\
+&&(and) *$p(y)$*(a class prior)
+
+~~~~Using the Bayes rule:\
+$
+  p(y = 1|x) = frac(p(x|y=1)p(y=1), p(x))\
+  p(x) = p(x|y=1)p(y=1) + p(x|y=0)p(y=0)
+$
+\
+Combining the above two equations gives:
+$
+  p(y=1|x) = frac(p(x|y=1)p(y=1), p(x|y=1)p(y=1) + p(x|y=0)p(y=0))
+$
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
