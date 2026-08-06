@@ -702,3 +702,408 @@ $
 
 #pagebreak()
 
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec IV]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+=== 1. Perception Learning Algoritm
+\
+~~~~Logistic Regression uses the sigmoid function $g(z) = 1 / (1+e^(-z))$to squeeze the entire real line from $(- infinity, +infinity)$ to $(0, 1)$.
+\
+\
+
+~~~~Imagine modifying logistic regression so that it is "forced" to output only 0 or 1. A natural way is to use a threshold function(unit step funct):
+
+#align(center)[
+  $
+    g(z) = cases(
+      1 & "if " z >= 0,
+      0 & "if " z < 0
+    )
+  $
+]
+#figure(
+  image("images/unit_step_func.jpg", width: 60%),
+  caption: [unit step function],
+)
+
+\
+
+
+
+
+~~~~Then  we still define  the hypothesis function $h_theta (x) = g(theta^T x)$, but now with $g$ as the threshold function above, and then apply the following update rule(same for both logistic regression and the perception):
+
+#align(center)[
+  $ theta_j := theta_j + alpha ( y^((i)) - h_theta (x^((i))) ) x_j^((i)) $
+]
+
+then we obtain the _perceptron learning algorithm_.
+\
+~~~~Inspect this equation carefully: if the prediction is right, $y^((i)) - h_theta (x^((i))) = 0$, and there'll be no update. Otherwise $y^((i)) - h_theta (x^((i))) = ± 1$.
+\
+
+~~~~More close looks at its update algorithm when the prediction is wrong and we end up at $y^((i)) - h_theta (x^((i))) = ± 1$ : \
+~~~~① If $y^((i)) = 0, h_theta (x^((i))) = 1$,which means we've mistaken a negative example as a positive one. So we take : $theta_j := theta_j - alpha x_j$ , to add $- alpha arrow(x)$ to $arrow(theta)$ , one common way to intending a negative dot product $arrow(x) dot arrow(theta)$ later. (当y=0, 我们希望$arrow(theta)$与$arrow(x)$尽量相反) (这里要配一个向量图1)
+\
+
+~~~~② Similarly, when we've mistaken a positive example as negative one, we to add $alpha arrow(x)$ to $arrow(theta)$ , wishing a positive dot product $arrow(x) dot arrow(theta)$. (当y=1, 我们希望$arrow(theta)$与$arrow(x)$尽量接近) (这里要配一个向量图2)
+
+#figure(
+  image("images/Lec4_perceptron.jpg", width: 80%),
+  caption: [perceptron update rule],
+)
+\
+\
+
+~~~~（题外话）：In the 1960s, this "perceptron" was considered a rough model of how a single neuron in the brain might work. Because of its simplicity, this algorithm serves as a starting point for our later discussion of learning theory in this course. However, it is important to note that although the perceptron learning algorithm may look superficially similar to the other algorithms we have covered, it is actually fundamentally different in kind from logistic regression and least‑squares linear regression. In particular, it is very difficult to attach a meaningful probabilistic interpretation to the perceptron's predictions, nor can the perceptron learning algorithm be derived as a maximum likelihood estimation procedure.
+\
+\
+\
+\
+
+=== 2. The Exponential Family
+\
+
+- 我们先定义一下指数组分布（exponential family distributions）。如果一个分布能用下面的方式来写出来，我们就说这类分布属于指数族：
+
+#align(center)[
+  $ p(y ; eta) = b(y) exp(eta^T T(y) - a(eta)) $
+]
+
+上面的式子中:\
+$y$——数据(data)\
+
+$eta$——此分布的自然参数（natural parameter，也叫典范参数 canonical parameter）\
+
+$T(y)$——充分统计量（sufficient statistic），通常就是 $y$ 自身\
+
+$eta$ 与 $T(y)$ 的维度应当匹配（二者向量点积）\
+
+$b(y)$——basic measure，是一个标量\
+
+$a(eta)$——对数分割函数（log partition function）\
+
+
+#align(center)[
+  $ p(y ; eta) = (b(y) e^(eta^T T(y))) / e^(a(eta)) $
+]
+
+~~~~$e^(-a(eta))$ 这个量本质上扮演了归一化常数（normalization constant）的角色，也就是确保 $p(y ; eta)$ 的总和或者积分等于 $1$。
+\
+
+~~~~当给定 $T$，$a$ 和 $b$ 时，就定义了一个用 $eta$ 进行参数化的分布族（family，或者叫集 set）；通过改变 $eta$，我们就能得到这个分布族中的不同分布（也就是说这是一个单参数的分布，给定$eta$，我们就能拿到这个分布的全部概率密度公式等等，进而之后的更新公式也能被推导出来）。
+
+\
+\
+\
+
+- *_Bernoulli Distribution_* is in this family
+
+~~~~Recall that Bernoulli distribution's PDF is:
+
+$
+  p(y ; phi) & = phi^y (1 - phi)^(1-y)
+$
+
+~~~~Then we rewrite it into the form above:
+
+#align(center)[
+  $
+    p(y ; phi) & = exp(y log phi + (1-y) log (1 - phi)) \
+               & = exp(( log (phi / (1 - phi)) ) y + log (1 - phi))
+  $
+]
+~~~~compare it to this uni-form:
+
+#align(center)[
+  $ p(y ; eta) = (b(y) e^(eta^T T(y))) / e^(a(eta)) $
+]
+
+~~~~The corresponding parameters for Bernoulli's distribution are:
+
+#align(center)[
+  $
+      b(y) & = 1 \
+       eta & = log(phi/(1-phi)) \
+      T(y) & = y \
+    a(eta) & = - log (1 - phi) = log (1 + e^eta)
+  $
+]
+\
+
+- *_Gaussian Distribution_* is also in this family
+\
+assume $sigma^2 = 1$
+#align(center)[
+  $
+    p(y ; mu) & = (1)/(sqrt(2 pi)) exp(- (y - mu)^2 / 2) \
+              & = (1)/(sqrt(2 pi)) exp(- 1/2 y^2) dot.c exp(mu y - 1/2 mu^2)
+  $
+]
+
+~~~~Then we have:
+
+#align(center)[
+  $
+      b(y) & = (1)/(sqrt(2 pi)) exp(- y^2 / 2) \
+       eta & = mu \
+      T(y) & = y \
+    a(eta) & = eta^2 / 2 (= mu^2 / 2) \
+  $
+]
+
+\
+
+
+- Properties with the exponential family
+
++ MLE with respect to $eta$ is a concave function $<=>$ NLL(negative log likelihood) is convex\
+
++ $ E[y; eta] = partial(a(eta)) / (partial eta) $
+
++ $ V a r[y; eta] = (partial^2 (a(eta))) / (partial eta^2) $
+
+~~~~通常我们求解某种分布中的均值与方差的时候需要进行积分，但是此时我们只需要进行求导，更易操作
+\
+\
+\
+
+~~~~事实上，针对不同类型的数据，我们可以采用exponential family中的不同分布类型进行建模：\
+
+① Real number（实值）—— Gaussian\
+② Binary（二分类数据）—— Bernoulli\
+③ count （1，2，3...整数）—— Poisson\
+④ $R^+$ （正实数）—— Gamma, Exponential\
+⑤ 概率分布之上的概率分布 —— Beta, Dirichlet（通常出现在贝叶斯机器学习、统计中）
+\
+\
+\
+\
+\
+
+
+- *GLMs*
+
+~~~~进行泛化，设想一个分类或者回归问题，要预测一些随机变量 $y$ 的值，作为 $x$ 的一个函数。要导出适用于这个问题的广义线性模型，就要对我们的模型、给定 $x$ 下 $y$ 的条件分布来做出以下三个假设：
+
+1. *假设 1*：$ y | x ; theta ~ "ExponentialFamily"(eta) $
+即给定 $x$ 和 $theta$，$y$ 的分布属于指数分布族，是一个参数为 $eta$ 的指数分布。
+
+2. *假设 2*：$ eta = theta^T x, #h(1em) theta in RR^n, x in RR^n $
+自然参数 $eta$ 和输入值 $x$ 是线性相关的，$eta = theta^T x$，且如果$eta$为有值的向量，则$eta_i = theta^T_i x$
+
+3. *假设 3*：\
+~~~~给定 $x$，目的是要预测对应这个给定 $x$ 的 $T(y) (=y)$ 的期望值，这就意味着我们的学习假设 $h$ 输出的预测值 $h(x)$ 要满足 $ h(x) = E [y | x] $
+例如在逻辑回归中，
+$
+  h_theta (x) & = [p(y = 1 | x ; theta)] \
+              & = [0 dot p(y = 0 | x ; theta) + 1 dot p(y = 1 | x ; theta)] \
+              & = E[y | x ; theta]
+$
+注：这里的 $E[y | x]$ 应该就是对给定 $x$ 时的 $y$ 值的期望的意思。
+
+\
+\
+
+~~~~上面的几个假设中，第二个可能看上去证明得最差，所以也更适合把这第二个假设看作是一个我们在设计广义线性模型时候的一种“设计选择”（design choice），而不是一个假设。自然界可能并不真的遵循$eta = theta^T x$，但我们把它当成一个设计准则。因为线性是最简单的起点，而且如果这条线不够好，我们可以在 $x$ 上加非线性特征（比如 $log x$, $x^2$ 来强制让它变好）\
+\
+
+~~~~那么这三个假设/设计，就可以用来推导出一个非常合适的学习算法类别，即广义线性模型（GLMs），这个模型有很多特别友好又理想的性质，比如很容易学习。此外，这类模型对一些关于 $y$ 的分布的不同类型建模来说通常效率都很高；例如，我们下面就将要简单介绍一些逻辑回归以及普通最小二乘法这两者如何作为广义线性模型来推出。
+
+\
+\
+
+~~~~整体思想是这样的，一共分为两部分：模型 + 分布。首先我们拿到输入 $x$，我们假设模型是一个线性模型，于是这个模型通过可学习的参数 $theta$ 输出 $theta^T x$ 作为参数 $eta$（即自然参数），$eta$ 被传递给 Exponential Family 作为其核心参数，（我们会在分布这部分选择合适的分布，分布类型的选择取决于我们最后的任务，比如说预测实值就选Guassian，预测值$in {0,1}$就选Bernoulli......进而再选择合适的$b(y), a(eta), T(y)$）最后我们在对应的分布类型上得到最终的预测值 $h(x)$，这个预测值被定义为在给定 $x$ 下的条件期望 $E[y | x]$。\
+（上述mental map要配一个手绘示意图）
+
+#figure(
+  image("images/Lec4_GLM_mental_map.jpg", width: 80%),
+  caption: [GLM mental map],
+)
+\
+
+
+~~~~而这个期望值，恰好等于指数族分布的对数分割函数 $a(eta)$ 的一阶导数：
+#align(center)[
+  $ h(x) = E[y | x] = (partial a(eta)) / (partial eta) $
+]
+
+~~~~这个数学性质（指数族的均值-参数恒等式）是连接线性部分 $eta$ 和最终预测值之间的桥梁。
+
+\
+~~~~GLM 的流水线就是：输入 $x$ 线性投影得到 $eta$，$eta$ 驱动指数族分布，最后输出的是该分布的期望值。而这个期望值是由 $eta$ 经过“正则响应函数”（即 $a(eta)$ 的导数）映射得到的。
+
+#align(center)[
+  $ eta = theta^T x, quad h(x) = E[y | x] = (partial a(eta)) / (partial eta) $
+]
+
+\
+\
+
+
+在学习的时候，我们做的是maximum likelihhod：
+$
+  max_theta log P(y^((i)); theta^T x^((i)))
+$
+在训练的时候我们怎样训练得到模型？我们通过梯度下降得到的参数，就
+
+是线性模型里面的参数$theta$，而不是分布里面的$mu, sigma^2, eta$
+\
+\
+\
+\
+
+- Learning update rule
+
+~~~~It turns out that no matter what kind of GLM we're doing, or what kind of distribution we choose. The rule is always the same as below:
+\
+$
+  theta_j := theta_j + alpha (y^((i)) - h_theta (x^((i)))) x_j^((i))
+$
+(注意：以上这个总是成立的统一更新公式的推导是因为我们使用的MLE进而推导出来的)
+\
+\
+
+- Terminology
+$eta ->$ natural parameter\
+$mu = E[y; eta] = g(eta) = partial / (partial eta) a(eta) -> g():$ canonical response function\
+$eta = g^(-1)(mu) -> g^(-1)():$ canonical link function
+
+
+\
+\
+- 3 Parameterizations
+
+①: model parameter : $theta$\
+②: natural parameter : $eta$\
+③: canonical parameter :
+$
+  phi - "Bernoulli"\
+  mu, sigma^2 - "Guassian"\
+  lambda - "Poisson"
+$
+\
+
+~~~~Whenever we learn a GLM, we learn $theta$(that is in the linear model).\
+~~~~$theta^T x = eta$ (it's the design choice !)\
+~~~~$g(eta) = "canonical parameter"$; \
+and $g^(-1)("canonical param") = eta$
+
+\
+\
+\
+\
+
+~~~~Now recall the logistic regression:
+$ h_theta (x) = E[y|x ; theta] = phi $ (we choose the Bernoulli distribution, so the canonical param here is $phi$)\
+~~~~Also, there is:
+$ phi = 1/(1+e^(- eta)) = 1/(1+e^(- theta^T x)) $
+\
+~~~~By now, we know that the logistic function is a natural choice when doing binary classification !
+
+\
+\
+\
+
+~~~~Also, recall linear regression: we have input x, and get $ theta^T x = eta $ ~~~~Additionally, we use the Guassian as the distribution in this case, so $ eta = mu $
+~~~~In our Guassian assumption, we assume that for every x, the correspoding y is in a Guassian distribution of variance 1（注意：方差不为1时方差的大小可以被学习在$theta$中，所以简化起见我们就令方差为1） and mean of $theta^T x$（配一个手绘图）
+\
+~~~~所以我们相当于是认定事先存在上述手绘图中的这种数据分布规律，然后我们实际拿到的数据是这个分布规律之上产生的，现在我们实际做的就是一个从右向左的倒推过程，最后要找到合适的$theta$。（再配一个手绘图）
+
+#figure(
+  image("images/Lec4_GLM_Guassian.jpg", width: 100%),
+  caption: [GLM linear regression(Guassian)],
+)
+\
+\
+
+~~~~同理对于逻辑回归任务，我们同样也是要进行这样的一个倒推（再配一张手绘图）
+
+#figure(
+  image("images/Lec4_GLM_logistic.jpg", width: 100%),
+  caption: [GLM logistic regression(Bernoulli)],
+)
+\
+\
+\
+
+
+
+- Softmax regression
+
+~~~~Softmax回归可以被理解为GLM家族中的一个例子，但是这里我们将采取非GLM的方法进行推证，即采用交叉熵(Cross Entropy)的思想。
+
+\
+
+Consider a multi-class(k- class) classification:\
+
+$x^((i)) in RR^(n), "label" y in [{0, 1}^k]$ (y is a one-hot vector)
+
+~~~~_Every class_ has its own set of parameters: $theta_"class" in RR^n$, and there are $k$ such $theta_"class"$, $class in {0, ..., 1, ..., 0}$(one-hot vector)
+
+\
+The whole parameters form a matrix:
+$
+  overbrace(
+    underbrace(
+      mat(
+        theta_1^T;
+        theta_2^T;
+        dots;
+        theta_k^T
+      ),
+      k " rows"
+    ),
+    n " columns"
+  )
+$
+\
+（这里配一张分类手绘图）
+
+#figure(
+  image("images/Lec4_softmax.jpg", width: 80%),
+  caption: [Multi-class classification],
+)
+
+
+~~~~Given a $x$, $theta^T x in (-infinity, +infinity)$. Our gola is to get a probability distribution over the classes, so we first take the exponential of each $theta_i^T x$ : $e^(theta_i^T x)$ and the value will be positive. Then, normalize the values:
+$ frac(e^(theta_i^T x), sum_(i=1)^k e^(theta_i^T x)) $
+
+~~~~So given a x, and we run this whole procedure, we get _a probability output over all the classes_ for which class that example is most likely to belong to.
+\
+~~~~The true $y$ is prob 1 over the true class, and prob 0 over other classes.
+\
+~~~~Our goal is to minimize the distance between the two prob distributions. The term  for that is :" minimize the cross entropy between the two distributions ".
+\
+$
+  op("Cross Entropy")(p, hat(p)) = -sum_(y in "classes") p(y) log hat(p)(y)
+$
+~~~~For this example,
+$
+  & = -log hat(p)(y_0) \
+  & = -log frac(e^(theta_i^T x), sum_(c in "classes") e^(theta_c^T x))
+$
+
+~~~~And then we do gradient descent with respect to the parameters.
+
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
