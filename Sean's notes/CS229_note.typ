@@ -1124,8 +1124,6 @@ $
 ~~~~By now, the learning algorithms we've learned are called discriminative learning algorithms. (也就是说目前为止，我们讲过的学习算法的模型都是 $p(y | x ; theta)$，即给定 $x$ 下 $y$ 的条件分布，以 $theta$ 为参数)
 
 \
-
-=== 1. Guassian Discriminative Analysis
 \
 ~~~~设想一个二分类问题，我们要学习基于一个动物的某个特征来辨别它是大象 $(y = 1)$ 还是小狗 $(y = 0)$。给定一个训练集，用逻辑回归或者基础版的感知器算法（perceptron algorithm）这样的一个算法能找到一条直线，作为区分开大象和小狗的边界。接下来，要辨别一个新的动物是大象还是小狗，程序就要检查这个新动物的值落到了划分出来的哪个区域中，然后根据所落到的区域来给出预测。（以上这样的 discriminative algorithm 本质就是在做MLE）
 
@@ -1142,7 +1140,7 @@ Learn *$p(y|x)$*, i.e. *$h_theta (x) = cases(0, 1)$* ~ directly. (the mapping : 
 \
 
 - - Generative:\
-Learn *$p(x|y)$* (given the class y, what the feature x will be like)\
+Learn *$p(x|y)$* (given the class y, what the feature x will be like)
 &&(and) *$p(y)$*(a class prior)
 
 ~~~~Using the Bayes rule:\
@@ -1156,6 +1154,98 @@ $
   p(y=1|x) = frac(p(x|y=1)p(y=1), p(x|y=1)p(y=1) + p(x|y=0)p(y=0))
 $
 
+\
+\
+
+=== 1. Guassian Discriminant Analysis (GDA)
+\
+
+~~~~Suppose $x in RR^n$(continuous value), and we drop the convention that $x_0 = 1$. (Note that in linear model: $theta^T x = theta_0 + theta_1 x_1 + ... + theta_n x_n$, so we design that $x_0 = 1$)
+\
+
+~~~~*Key Assumption*:
+*$ p(x|y) "is distributed Guassian" $*
+(given the label class, the feature is distributed Guassian)
+\
+
+~~~~In this case, $x$ is a high-dimensional vector, so $x$ should follow a multivariate Guassian distribution.
+$ x ~ cal(N)(mu, Sigma) $
+
+$mu$ is the mean vector ($in RR^n$)
+
+$Sigma$ is the covariance matrix ($in RR^(n times n)$)
+
+~~~~These teo parameters are the requirements for multivariate Guassian, they control the mean value and the variance.
+
+\
+多元高斯分布的概率密度公式(PDF) :
+#align(center)[
+  $ p(x ; mu, Sigma) = (1) / ((2 pi)^(n / 2) |Sigma|^(1 / 2)) exp(- 1 / 2 (x - mu)^T Sigma^(-1) (x - mu)) $
+]
+
+Some pictures for intuition:
+
+#figure(
+  image("images/Lec5_multivariate_Guassian_bumps1.png", width: 100%),
+  caption: [Multivariate Guassian bumps1],
+)
+#figure(
+  image("images/Lec5_multivariate_Guassian_bumps2.png", width: 80%),
+  caption: [Multivariate Guassian bumps2],
+)
+\
+\
+
+#figure(
+  image("images/Lec5_multivariate_Guassian_contours.png", width: 100%),
+  caption: [Multivariate Guassian contours],
+)
+
+#figure(
+  image("images/Lec5_multivariate_Guassian_bumps3.png", width: 100%),
+  caption: [Multivariate Guassian bumps3],
+)
+
+\
+\
+
+GDA model:\
+
+$
+  p(x|y=0) = (1) / ((2 pi)^(n / 2) |Sigma|^(1 / 2)) exp(- 1 / 2 (x - mu_0)^T Sigma^(-1) (x - mu_0))
+  \
+  p(x|y=0) = (1) / ((2 pi)^(n / 2) |Sigma|^(1 / 2)) exp(- 1 / 2 (x - mu_1)^T Sigma^(-1) (x - mu_1))
+$
+
+\
+~~~~Also, we have to model y (a Bernoulli random variable):
+$
+  p(y) = phi^y (1-phi)^(1-y) #h(1em)i.e (p(y=1) = phi)
+$
+\
+
+Parameters:
+*$mu_0, mu_1(in RR^n), Sigma(in RR^(n times n)), phi(in RR(0, 1))$*
+
+(usually we use the same $Sigma$ rather than $Sigma_0, Sigma_1$, but the means are different)
+\
+\
+
+~~~~So if we can fit the 4 parameters above, we can define $p(x|y)$ and $p(y)$, then we can use the Bayes rule to calculate $p(y=1|x), p(y=0|x)$, to predict the label :
+#align(center)[
+  $
+    p(y=1|x) = frac(
+      #text(fill: blue)[$p(x|y=1)$] #text(fill: green)[$p(y=1)$],
+      #text(fill: blue)[$p(x|y=1)$] #text(fill: green)[$p(y=1)$] + #text(fill: blue)[$p(x|y=0)$] #text(fill: green)[$p(y=0)$]
+    )
+  $
+]
+\
+\
+\
+
+Now we discuss how to fit the parameters above:
+\
 
 
 
@@ -1164,6 +1254,20 @@ $
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
 
 
 
