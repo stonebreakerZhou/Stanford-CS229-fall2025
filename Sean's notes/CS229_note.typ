@@ -1209,7 +1209,7 @@ Some pictures for intuition:
 \
 \
 
-GDA model:\
+- *GDA model*:
 
 $
   p(x|y=0) = (1) / ((2 pi)^(n / 2) |Sigma|^(1 / 2)) exp(- 1 / 2 (x - mu_0)^T Sigma^(-1) (x - mu_0))
@@ -1231,7 +1231,7 @@ Parameters:
 \
 \
 
-~~~~So if we can fit the 4 parameters above, we can define $p(x|y)$ and $p(y)$, then we can use the Bayes rule to calculate $p(y=1|x), p(y=0|x)$, to predict the label :
+~~~~So if we can fit the 4 parameters above, we can define $p(x|y)$ and $p(y)$, then we can use the Bayes rule to calculate $p(y=1|x), p(y=0|x)$, to predict the label(at test time) :
 #align(center)[
   $
     p(y=1|x) = frac(
@@ -1244,26 +1244,248 @@ Parameters:
 \
 \
 
-Now we discuss how to fit the parameters above:
+- Now we discuss *how to fit the parameters above at training time*:
+\
+training set: ${x^((i)), y^((i))}_(i=1)^m$
+\
+\
+~~~~In order to fit the parameters, we want to #underline[maximize the joint likelihood.]
+\
+\
+*_Joint likelihood_* :
+$
+  cal(L)(phi, mu_0, mu_1, Sigma) & = product_(i=1)^m p(x^((i)), y^((i));#h(0.5em) phi, mu_0, mu_1, Sigma) \
+                                 & = product_(i=1)^m p(x^((i))|y^((i)))p(y^((i)))
+$
+(we want to maximize $p(x^((i)), y^((i)))$)
+
+~~~~_Generative_ learning algorithm is to maximize the joint likelihood, whereas for a _discriminative_ learning algorithm, we're maximizing the *_conditional likelihood_*:
+$
+  cal(L)(theta) = product_(i=1)^m p(y^((i))|x^((i)), theta)
+$
+(we're choosing $theta$ to maximize $p(y^((i))|x^((i)))$)
+
+\
+\
+
+~~~~Maximize joint likelihood estimation:
+$
+  max_(phi, mu_0, mu_1, Sigma) log cal(L)(phi, mu_0, mu_1, Sigma)\
+  = max_(phi, mu_0, mu_1, Sigma) cal(l)(phi, mu_0, mu_1, Sigma)\
+$
+\
+(proof is ......)
+\
+\
+\
+\
+
+~~~~The solutions are:
+
+#align(center)[
+  $
+      phi & = frac(sum_(i=1)^m 1{y^((i))=1}, m) ("prob of y of label 1"), \
+     mu_0 & = (sum_(i=1)^m 1{y^((i)) = 0} x^((i))) / (sum_(i=1)^m 1{y^((i)) = 0})("所有y=0样本的特征均值"), \
+     mu_1 & = (sum_(i=1)^m 1{y^((i)) = 1} x^((i))) / (sum_(i=1)^m 1{y^((i)) = 1})("所有y=1样本的特征均值"), \
+    Sigma & = (1)/(m) sum_(i=1)^m (x^((i)) - mu_(y^((i)))) (x^((i)) - mu_(y^((i))))^T
+  $
+]
+（可以配一张图直观表示两个分类的均值等取法）
+
+note that:\
+$
+  1{"true"} = 1,\
+  1{"false"} = 0.
+$
+
+\
+\
+
+- *Prediction* (predict the most likely class label) :
+
+$
+  arg max_y p(y|x) = arg max_y frac(p(x|y)p(y), p(x))
+$
+(return value of arg max is the corresponding value we need to plug in to achieve that biggest possible value, and in this case y is 0 or 1)\
+
+~~~~Note that the denominator $p(x)$ is just a constant irrelative to $y$, so the above expression is equal to:
+$
+  arg max_y p(x|y)p(y)
+$
+
+\
+\
+\
+\
+
+- *GDA and logistic regression comparison*
+\
+- - logistic regression
+
+~~~~This discriminative learning algorithm is to fit a $theta$, and to output $theta^T x$ as the decision boundary.(like a line on the 2D plane)
+\
+
+#figure(
+  image("images/Lec5_LW_figure.png", width: 100%),
+  caption: [logistic regression iteration],
+)
+
+\
+
+- - GDA
+
+
+#figure(
+  image("images/Lec5_GDA_approach.png", width: 100%),
+  caption: [GDA approach],
+)
+\
+① 分别为正负例拟合高斯分布：使用相同的协方差矩阵，定位两个高斯分布位置，确定参数：
+$
+  phi, mu_0, mu_1, Sigma
+$
+② 我们可以得到决策边界的直线，由于直线处判别为正负例的概率相同：
+$
+  p(y=1|x) = p(y=0|x)
+$
+~~~~利用贝叶斯公式：
+$
+  p(x|y=1)dot p(y=1) = p(x|y=0)dot p(y=0)
+$
+~~~~利用高斯分布PDF（概率密度公式），我们把之前在拟合步骤中算好的 $mu_0, mu_1, Sigma$ ，分别塞进高斯分布的公式里：\
+\
+
+~~~~左侧（类别 $1$）：
+#align(center)[
+  $ (1)/((2 pi)^(n/2) |Sigma|^(1/2)) exp(-1/2 (x - mu_1)^T Sigma^(-1) (x - mu_1)) dot phi $
+]
+
+~~~~右侧（类别 $0$）：
+#align(center)[
+  $ (1)/((2 pi)^(n/2) |Sigma|^(1/2)) exp(-1/2 (x - mu_0)^T Sigma^(-1) (x - mu_0)) dot (1 - phi) $
+]
+
+\
+\
+~~~~最后得到决策边界直线的表达式：
+$
+  theta^T x + theta_0 = 0
+$
+①
+#align(center)[
+  $ theta = Sigma^(-1) (mu_1 - mu_0) $
+]
+~~~~表明：决策边界直线一定垂直于 $mu_0$ 与 $mu_1$ 的连线方向（在 $Sigma$ 定义的度量空间下）。\
+
+②
+#align(center)[
+  $ theta_0 = - 1/2 mu_1^T Sigma^(-1) mu_1 + 1/2 mu_0^T Sigma^(-1) mu_0 + log(phi / (1 - phi)) $
+]
+~~~~决定直线在空间中的具体位置（偏移量）。
+
+\
+\
+\
+
+~~~~从示例图中可以看出，同一个训练集，使用GDA与使用logistic regression方法最后得到的决策边界直线不相同
+\
+\
+
+Note: \
+Why we choose the same covariance matrix $Sigma$ ?
+\
+
+~~~~It turns out that the decision boundary is usually linear, so the same covariance matrix $Sigma$ leads to linear boundary, and separate $Sigma_0, Sigma_1$ will lead to nonlinear boundary.(it;s actually unreasonable)
 \
 
 
 
+- *Compare GDA and logistic regression*
+\
 
+~~~~For a fixed set of parameters: $phi, mu_0, mu_1, Sigma$ , let's plot the predicted prob:
+$
+  #text(fill: red)[$p(y=1|x)$] = frac(#text(fill: green)[$p(x|y=1)$]#text(fill: blue)[$p(y=1)$], #text(fill: orange)[$p(x)$])
+$
 
+(note: \
+the red part is parametrized by $phi,mu_0,mu_1,Sigma$;\
+the green part is parametrized by $mu_1,Sigma$ (label 1 Guassian distribution PDF);\
+the blue part is parametrized only by $phi$ (Bernoulli distribution));\
+the orange part is parametrized by $phi,mu_0,mu_1,Sigma$ (it can be expanded using Baye's rule).
 
+\
 
+~~~~So for every given x, we can compute this ratio and thus get a number for the chance of Y being 1 given X.
 
+\
+\
 
+~~~~Now we can watch this $p(y=1|x)$ function more carefully through an simple example.（下面配上手绘图（分步骤多步））
+\
 
+~~~~可以看出，如果在训练集中 $phi = 0.5$，则 $p(y=1|x)$ 就是一个标准的Sigmoid函数。
+\
 
+~~~~所以既然GDA与logistic regression实质上都是使用的sigmoid function来计算最后的预测比率$p(y=1|x)$，但是由于参数选择的原因，我们从之前的figure中看出两种算法最后得到的决策边界并不相同。\
 
+~~~~那么两种算法分别在什么情况下更优？
 
+\
+\
+\
+\
+\
+\
+\
+\
 
+- - In-depth Comparison
+\
+(generative)\
+~~~~GDA assumes that:
+$
+  x|y=0 ~ cal(N)(mu_0, Sigma)\
+  x|y=1 ~ cal(N)(mu_1, Sigma)\
+  y ~ "Bernoulli"(phi)
+$
 
+\
 
+(discriminative)\
+~~~~Logistic regression assumes that:
+$
+  p(y=1|x) = frac(1, 1+theta^T x),\
+  "with details like" x_0 = 1
+$
+~~~~In other words, it assumes that $p(y=1|x)$ is a logistic function.
 
+\
+\
 
+~~~~根据我们刚才的示意图（之后作业中会进行证明）可以看出，从GDA的假设条件出发，我们事实上可以推出 $p(y=1|x)$ 是一个逻辑函数，但是反过来，从数学上我们可以知道 logistic function条件并不能推出GDA的假设条件，也就是说这是一种充分不必要的关系，GDA的假设条件更强(stronger set of assumptions)！\
+
+（这个地方配一个简单的双箭头互指示意图，但是反推不成立）
+
+\
+\
+
+~~~~在模型中，当我们告诉模型更多的正确信息之后，模型通常会表现更好。因此，如果GDA的假设正确，因为它的条件更强，所以这种情况下使用GDA效果更好；但如果假设错误会导致模型表现很差。
+
+\
+\
+
+题外话：\
+对于任何广义线性模型中的指数家族分布而言，如果加上类似于上述GDA假设，都会推出 $p(y=1|x)$ 是逻辑函数的条件，例如：
+$
+  x|y=0 ~ "Poisson"(mu_0, Sigma)\
+  x|y=1 ~ "Poisson"(mu_1, Sigma)\
+  y ~ "Bernoulli"(phi)
+$
+也能得到上述类似的结论。
+\
+
+因此logistic更弱的假设能使模型鲁棒性更强(robustness)；但如果数据集很小，做出更多假设的模型实际上能让模型表现得更好，so it's more computationally efficient 而且更加准确. 但在当前大量数据的浪潮下，我们都更倾向于使用 logistic regression.
 
 
 
