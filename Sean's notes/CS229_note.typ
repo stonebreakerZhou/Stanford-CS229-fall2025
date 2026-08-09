@@ -1280,7 +1280,7 @@ $
 \
 \
 
-~~~~The solutions are:
+~~~~The MLE solutions are:
 
 #align(center)[
   $
@@ -1293,6 +1293,7 @@ $
 （可以配一张图直观表示两个分类的均值等取法）
 
 note that:\
+*_indicator function_*（指示函数， 后面会频繁用到）\
 $
   1{"true"} = 1,\
   1{"false"} = 0.
@@ -1301,7 +1302,7 @@ $
 \
 \
 
-- *Prediction* (predict the most likely class label) :
+- *Prediction Rule* (predict the most likely class label，比较后验概率值大小) :
 
 $
   arg max_y p(y|x) = arg max_y frac(p(x|y)p(y), p(x))
@@ -1421,10 +1422,22 @@ the orange part is parametrized by $phi,mu_0,mu_1,Sigma$ (it can be expanded usi
 \
 \
 
-~~~~Now we can watch this $p(y=1|x)$ function more carefully through an simple example.（下面配上手绘图（分步骤多步））
+~~~~Now we can watch this $p(y=1|x)$ function more carefully through an simple example.（下面配上手绘图（分步 骤多步））
+#figure(
+  image("images/Lec5_GDA_simple_example_figure1.jpg", width: 100%),
+  caption: [GDA simple example figure 1],
+)
+#figure(
+  image("images/Lec5_GDA_simple_example_figure2.jpg", width: 100%),
+  caption: [GDA simple example figure 2],
+)
+#figure(
+  image("images/Lec5_GDA_simple_example_figure3.jpg", width: 100%),
+  caption: [GDA simple example figure 3],
+)
 \
 
-~~~~可以看出，如果在训练集中 $phi = 0.5$，则 $p(y=1|x)$ 就是一个标准的Sigmoid函数。
+~~~~可以看出，如果在训练集中 $phi = 0.5$，则 $p(y=1|x)$ 就是一个标准的Sigmoid函数，事实上 $p(y=0|x)$ 也会是一个标准的Sigmoid函数（作业中会进行严格证明）
 \
 
 ~~~~所以既然GDA与logistic regression实质上都是使用的sigmoid function来计算最后的预测比率$p(y=1|x)$，但是由于参数选择的原因，我们从之前的figure中看出两种算法最后得到的决策边界并不相同。\
@@ -1439,8 +1452,9 @@ the orange part is parametrized by $phi,mu_0,mu_1,Sigma$ (it can be expanded usi
 \
 \
 \
+\
 
-- - In-depth Comparison
+- - *In-depth Comparison*
 \
 (generative)\
 ~~~~GDA assumes that:
@@ -1466,7 +1480,10 @@ $
 ~~~~根据我们刚才的示意图（之后作业中会进行证明）可以看出，从GDA的假设条件出发，我们事实上可以推出 $p(y=1|x)$ 是一个逻辑函数，但是反过来，从数学上我们可以知道 logistic function条件并不能推出GDA的假设条件，也就是说这是一种充分不必要的关系，GDA的假设条件更强(stronger set of assumptions)！\
 
 （这个地方配一个简单的双箭头互指示意图，但是反推不成立）
-
+#figure(
+  image("images/Lec5_GDA_logistic_comparison.jpg", width: 100%),
+  caption: [GDA-logistic comparison],
+)
 \
 \
 
@@ -1474,8 +1491,9 @@ $
 
 \
 \
+\
 
-题外话：\
+- - 题外话：\
 对于任何广义线性模型中的指数家族分布而言，如果加上类似于上述GDA假设，都会推出 $p(y=1|x)$ 是逻辑函数的条件，例如：
 $
   x|y=0 ~ "Poisson"(mu_0, Sigma)\
@@ -1485,7 +1503,175 @@ $
 也能得到上述类似的结论。
 \
 
-因此logistic更弱的假设能使模型鲁棒性更强(robustness)；但如果数据集很小，做出更多假设的模型实际上能让模型表现得更好，so it's more computationally efficient 而且更加准确. 但在当前大量数据的浪潮下，我们都更倾向于使用 logistic regression.
+~~~~如果数据集很小，做出更多假设的模型实际上能让模型表现得更好，so it's more computationally efficient 而且更加准确；逻辑回归建立的假设更弱，因此对于偏离的模型假设来说更加鲁棒（robust）。\
+
+~~~~然而，如果训练集数据的确是非高斯分布的（non-Gaussian），而且是有限的大规模数据（in the limit of large datasets），那么逻辑回归几乎总是比GDA要更好的。因此，在实际中，逻辑回归的使用频率要比GDA高得多。
+
+\
+\
+\
+\
+\
+
+- *Naive Bayes*
+\
+(The E-mail Classification Problem)
+\
+
+① Represent an e-mail as a feature vector $x$:\
+~~~~Given an e-mail, we'll take this piece of text and represent it as a feature vector. One way is to create an one-hot vector: occur-1, no-0.\
+$
+  x in {0, 1}^n "n-dim binary vector, with n: vocab_size"
+$
+$
+  x_i = 1{"word i appear in the email"}
+$
+(注：$1{ }$的用法见前文小节:指示函数（这个地方配一个跳转页面按钮？)
+\
+
+~~~~对于 Naive Bayes 算法（属于生成式算法），我们的目的同样是要建模 $p(x|y), p(y)$，但由于 $x$ 是一个n维二元向量，如果直接用多项分布建模 $p(x)$，那么需要处理 $2^n$ 种情况（相当于词之间两两搭配得到的所有条件概率），这会导致参数的个数过多。
+\
+
+~~~~所以我们这个地方还要引入额外的假设以解决参数个数过多的问题：
+\
+\
+\
+\
+\
+\
+
+- - *Naive Bayes Assumption*:
+$
+  x_i 's "are conditionally independent given" y
+$
+
+\
+~~~~By the chain rule of probability,\
+$
+  p(x_1,dots,x_n | y) = p(x_1|y)p(x_2|x_1,y)dots p(x_n|x_1,dots,x_(n-1),y)
+$
+
+~~~~So what naive Bayes actually assumes is that the expression above can be simplified as:
+$
+  & =^"assume" p(x_1|y)p(x_2|y)dots p(x_n|y) \
+  & = product_(i=1)^n p(x_i|y)
+$
+which means: if we've known $y$'s label, $x_i$'s existence won't affect $x_j$'s existence.
+
+\
+\
+
+~~~~However, this is just not a mathematically true assumption, but it has pratical sense.
+
+(???correlation with probability graph model???)
+是一个有向概率图模型，其中 $y$ 是父节点，所有 $x_i$​ 是它的子节点（星形结构）（配一个手绘图）
+\
+#figure(
+  image("images/Lec5_naive_Bayes_prob_graph.jpg", width: 50%),
+  caption: [Naive Bayes prob graph],
+)
+~~~~当我们引入上面的条件概率的独立性假设之后，我们只需要存储 $p(x_i|y)$ 这些n个独立的概率，参数个数从指数级减少至线性级。
+\
+\
+\
+
+
+
+- - *Parameters* of the model
+
+$
+                phi_(j|y=1) & = p(x_j=1|y=1) \
+                phi_(j|y=0) & = p(x_j=1|y=0) \
+  phi_(#text(fill: red)[y]) & = p(y=1)
+$
+\
+~~~~由于 $x$ 是一个n维二元向量， 所以事实上这里就相当于 $p(x_i|y)~"Berinoulli"$。\
+
+~~~~由于Naive Bayes与GDA同属于生成模型，我们来看看Naive Bayes在参数设置地方与GDA之间的关联与区别：\
+
+GDA: $ p(x|y) "is distributed Guassian"\
+p(y) = phi #h(1em) (y~"Bernoulli"(phi)) $
+
+~~~~可以看出Naive Bayes与GDA都是设y服从一个伯努利分布，但不同处在于GDA设条件概率服从高斯分布，Naive Bayes则设条件概率互相全部独立；作出条件概率这样的假设之后，求解MLE时能简便得解
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- - How to *fit the parameters*
+\
+*_Joint likelihood_*:(similar to GDA)
+$
+  cal(L)(phi_y, phi_(i|y)) & = product_(i=1)^m p(x^((i)), y^((i)); #h(1em) phi_y, phi_(j|y)) \
+                           & = product_(i=1)^m p(x^((i))|y^((i))) p(y^((i)))
+$
+(注：$m$：训练样本数量（邮件数量）)
+
+*_MLE conclusion_*:
+$
+        phi_y & = (sum_(i=1)^m 1{y^((i)) = 1}) / m \
+  phi_(j|y=1) & = frac(sum_(i=1)^m 1{x_j^((i)) = 1, y^((i)) = 1}, sum_(i=1)^m 1{y^((i)) = 1})
+$
+$phi_y$: $y=1$ 样本的比例\
+$phi_(j|y=1)$: 找出所有 $y=1$ 的样本，统计其中出现词$x_j$的比例
+
+\
+
+也可以回顾一下GDA的MLE结论，
+#align(center)[
+  $
+      phi & = frac(sum_(i=1)^m 1{y^((i))=1}, m) ("prob of y of label 1"), \
+     mu_0 & = (sum_(i=1)^m 1{y^((i)) = 0} x^((i))) / (sum_(i=1)^m 1{y^((i)) = 0})("所有y=0样本的特征均值"), \
+     mu_1 & = (sum_(i=1)^m 1{y^((i)) = 1} x^((i))) / (sum_(i=1)^m 1{y^((i)) = 1})("所有y=1样本的特征均值"), \
+    Sigma & = (1)/(m) sum_(i=1)^m (x^((i)) - mu_(y^((i)))) (x^((i)) - mu_(y^((i))))^T
+  $
+]
+\
+
+~~~~可以看出，Naive Bayes与GDA同属于generative model，两者参数的更新以及计算十分简便！（使用简单的统计计算，而非梯度下降等复杂的迭代法！）
+\
+
+Biggest problems:\
+what if we get zeros in some of the equations? (the next Laplace moving will solve it!!!)
+\
+\
+
+- - *Prediction Rule*
+~~~~Once we've fit the parameters ($phi_y$ and $phi_(j|y)$), we're able to do the label predictions.\
+
+~~~Given $x$，对于二分类问题，我们比较两类的后验概率：$p(y=1|x), p(y=0|x)$ 的大小。用贝叶斯公式代入，因为分母 $p(x)$ 相同，可以省略，所以实际上就是比较：
+$
+  p(x|y=1)p(y=1) =^? p(x|y=0)p(y=0)
+$
+\
+
+
+
+
+① Score ($y = 1$)：
+#align(center)[
+  $
+    "Score"(y = 1) & = p(x|y=1)p(y=1) \
+                   & = p(y = 1) product_(j=1)^n p(x_j | y = 1)
+  $
+]
+
+② Score ($y = 0$)：
+#align(center)[
+  $
+    "Score"(y = 0) & = p(x|y=0)p(y=0) \
+                   & = p(y = 0) product_(j=1)^n p(x_j | y = 0)
+  $
+]
+
+~~~~哪一个后验概率值大，输出的预测就是对应的label
+
 
 
 
