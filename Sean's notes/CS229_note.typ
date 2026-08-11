@@ -1675,6 +1675,7 @@ $
 
 
 
+
 #pagebreak()
 
 
@@ -1682,8 +1683,30 @@ $
 
 
 
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec VI]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
 
+=== 1. Continuation of Naive Bayes
 
+\
+
+- Laplace Smoothing
+\
+Let's continue with the previous Naive Bayes.
+
+\
+
+_recap_ : previous naive Bayes MLE conclusions:
+$
+        phi_y & = (sum_(i=1)^m 1{y^((i)) = 1}) / m \
+  phi_(j|y=1) & = frac(sum_(i=1)^m 1{x_j^((i)) = 1, y^((i)) = 1}, sum_(i=1)^m 1{y^((i)) = 1})
+$
+And at prediction time:
 
 
 
