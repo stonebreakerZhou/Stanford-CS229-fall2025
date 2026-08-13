@@ -1695,7 +1695,7 @@ $
 
 \
 
-- Laplace Smoothing
+- *Laplace Smoothing*
 \
 Let's continue with the previous Naive Bayes.
 
@@ -1706,7 +1706,12 @@ $
         phi_y & = (sum_(i=1)^m 1{y^((i)) = 1}) / m \
   phi_(j|y=1) & = frac(sum_(i=1)^m 1{x_j^((i)) = 1, y^((i)) = 1}, sum_(i=1)^m 1{y^((i)) = 1})
 $
-And at prediction time:
+And at prediction time, we'll calculate:
+$
+  p(y=1|x) & = frac(p(x|y=1)p(y=1), p(x)) \
+           & = frac(p(x|y=1)p(y=1), p(x|y=1)p(y=1)+p(x|y=0)p(y=0))
+$
+~~~~Imagine we have a key word $x_1000$ that had never appeared in previous text. So the prob $p(x_1000=1 |y=1) = 0$
 
 
 
