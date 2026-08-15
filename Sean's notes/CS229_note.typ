@@ -1519,7 +1519,7 @@ $
 \
 
 ① Represent an e-mail as a feature vector $x$:\
-~~~~Given an e-mail, we'll take this piece of text and represent it as a feature vector. One way is to create an one-hot vector: occur-1, no-0.\
+~~~~Given an e-mail, we'll take this piece of text and represent it as a feature vector. One way is to create an bi-value vector: occur-1, no-0.\
 $
   x in {0, 1}^n "n-dim binary vector, with n: vocab_size"
 $
@@ -1697,7 +1697,7 @@ $
 
 - *Laplace Smoothing*
 \
-Let's continue with the previous Naive Bayes.
+- - Let's continue with the previous Naive Bayes.
 
 \
 
@@ -1711,25 +1711,107 @@ $
   p(y=1|x) & = frac(p(x|y=1)p(y=1), p(x)) \
            & = frac(p(x|y=1)p(y=1), p(x|y=1)p(y=1)+p(x|y=0)p(y=0))
 $
-~~~~Imagine we have a key word $x_1000$ that had never appeared in previous text. So the prob $p(x_1000=1 |y=1) = 0$
+\
+
+~~~~Imagine we have a key word $x_1000$ that had never appeared in previous texts. So the prob $p(x_1000=1 |y=1) = 0$. Similarly, $p(x_1000=1 | y=0) = 0$. What causes Naive Bayes to break down is that : if we use these as esimates of the parameters :
+$
+  phi_(1000|y=1) = 0\
+  phi_(1000|y=0) = 0
+$
+~~~~Then in Naive Bayes:
+$
+  p(y=1|x) & = frac(#text(fill: red)[p(x|y=1)]p(y=1), #text(fill: red)[p(x|y=1)]p(y=1)+#text(fill: blue)[p(x|y=0)]p(y=0))
+$
+
+~~~~Because:
+$
+  p(x|y=1) = product_(i=1)^n p(x_i | y),\
+  p(x_1000 | y=1) = 0
+$
+~~~~So the red part = 0.
+Similarly, we have the blue part = 0 because $p(x_1000 | y=0) = 0$
+\
+
+~~~~That means if we encounter the key word $x_1000$, our classifier will estimate the prob as:
+$
+  p(y=1 | x) = frac(0, 0+0)
+$
+~~~~Additionally, it's a bad idea to estimate the probability of something as 0 just because we've nor seen it once yet, in statistic sense.
+
+\
+\
+\
+
+- - In Laplace smoothing, generally:
+\
+~~~~Assume we have a random variable :
+$
+  x in {1, dots, k}
+$
+~~~~So our estimates of the _prior_ parameters(using MLE) are (these wil serve as $phi_y$ in our Naive Bayes model) :
+$
+  "Estimate": p(x = j) = frac(sum_(j=1)^m 1{x^((i)) = j}, m)
+$
+
+~~~~However, to avoid prob 0, we do Laplace smoothing:
+$
+  p(x = j) = frac(sum_j=1^m 1{x^((i)) = j} #text(fill: red)[+1], m #text(fill: red)[+k])
+$
+
+~~~~Note that it is still a valid probability (the prob sum = 1):
+$
+  sum_(j=1)^k p(x = j) = (m+k) / (m+k) = 1
+$
+
+\
+
+~~~~回到我们的朴素贝叶斯分类器问题上，使用了拉普拉斯平滑之后，对参数的估计就写成了下面的形式：
+
+#align(center)[
+  $
+    phi_(j | y = 1) &= ( sum_(i=1)^m 1{ x_j^((i)) = 1 , y^((i)) = 1 } #text(fill: red)[+1] ) / ( sum_(i=1)^m 1{ y^((i)) = 1 } #text(fill: red)[+2] ), \
+    phi_(j | y = 0) &= ( sum_(i=1)^m 1{ x_j^((i)) = 1 , y^((i)) = 0 } #text(fill: red)[+1] ) / ( sum_(i=1)^m 1{ y^((i)) = 0 } #text(fill: red)[+2] )
+  $
+]
+
+\
+\
+\
 
 
 
+- - *Multivariate Bernoulli* representation
 
+~~~~Recall our text representation for Naive Bayes:
 
+#set math.mat(delim: "[")
+$ x = mat(x_1; dots.v; x_i; dots.v; x_n) $
 
+~~~~As $x_i$ is bi-valued (0 or 1), it drops the information that maybe certain words occur in the e-mail text more than once !
 
+\
+\
+- - *Multinomial Event Model*
+~~~~Now there's another way to represent a piece of the $i$th text: Essentially, we encode a $n_i$-dim vector by sequentially replacing each word with its corresponding vocabulary index, where $n_i$ equals the $i$th text's length.
 
+e.g:
+#set math.mat(delim: "[")
+$
+  x = mat(1200; dots.v; 6300; dots.v; 400) in RR^(n_i) \
+  n_i = "length of text i"\
+  x_j in {1, dots, n} "(n = vacab size)"
+$
+\
 
+~~~~Then we're gonna build a generative model:
+$
+  p(x, y) & = p(x|y)p(y) \
+          & =^("assume") product_(j=1)^n p(x_i | y) #h(0.8em) p(y)
+$
 
-
-
-
-
-
-
-
-
+~~~~现在可能会有些疑惑，这不正是我们之前在朴素贝叶斯中使用到的方法吗？（朴素贝叶斯中我们利用条件概率链式拆分，最后引入假设条件概率独立性最后就拆分成上述这个连乘式）
+\
+~~~~现在开始找不同：
 
 
 
