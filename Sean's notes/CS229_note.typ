@@ -1691,7 +1691,7 @@ $
   ]
 ]
 
-=== 1. Continuation of Naive Bayes
+== 1. Continuation of Naive Bayes
 
 \
 
@@ -1811,7 +1811,150 @@ $
 
 ~~~~现在可能会有些疑惑，这不正是我们之前在朴素贝叶斯中使用到的方法吗？（朴素贝叶斯中我们利用条件概率链式拆分，最后引入假设条件概率独立性最后就拆分成上述这个连乘式）
 \
-~~~~现在开始找不同：
+~~~~现在开始找不同：注意刚才的 $n_i$与$x_j$ 的定义与朴素贝叶斯中的定义大有不同！
+朴素贝叶斯中 $n_i$ = 词汇表长度，而 $x_j$ 是各个单词的索引而并非 “非0则1”，所以现在这里是#underline[一个多项式概率而不是二元或伯努利概率]。
+
+\
+
+~~~~这里我们要使用到的参数与之前相同：
+$
+          phi_y & = p(y = 1) \
+  phi_(k | y=0) & = p(x_j = k | y=0)
+$
+~~~~注意第二个概率等式：右侧含义是“如果y的标签为0，第j个词是k的概率”。但是，左侧并没有出现 $j$，因为我们做出假设这个词k在每个位置出现的概率相同（与位置j无关）。
+
+\
+
+~~~~现在，我们来讨论如何从训练集通过MLE拟合得到上述两个参数。
+\
+\
+
+~~~~如果给定一个训练集 ${(x^((i)), y^((i))); i=1, dots, m }$，其中 $x^((i)) = (x_1^((i)), x_2^((i)), dots, x_(n_i)^((i))))$（这里的 $n_i$ = 第 $i$ 个训练样本中的单词数目, $x^((i))$ 集合就表示第$i$个训练样本中的所有单词），那么这个数据的似然函数如下所示：
+
+#align(center)[
+  $
+    L(phi, phi_(k | y=0), phi_(k | y=1))
+    &= product_(i=1)^m p(x^((i)), y^((i))) \
+    &= product_(i=1)^m ( product_(j=1)^(n_i) p(x_j^((i)) | y; phi_(k | y=0), phi_(k | y=1)) ) p(y^((i)); phi_y)
+  $
+]
+
+~~~~对于这个含有双重连乘符的公式理解：\
+
+① 第一层（外层 $product_(i=1)^m$）：遍历数据集里的每一个训练样本（总共有 $m$ 个），最后就是要连乘所有的 $p(x^((i)), y^((i)))$
+$
+  product_(i=1)^m p(x^((i)), y^((i)))
+$
+
+② 第二层（中间层 $product_(j=1)^(n_i)$）：针对当前第 $i$ 个训练样本，先把当前这个概率拆分为 $p(x^((i)) | y^((i)))$， 再把$p(x^((i)) | y^((i)))$拆成连乘式，表示遍历里面的每一个单词）
+$
+  p(x^((i)) | y^((i))) p(y^((i))) = (product_(j=1)^(n_i) p(x_j^((i)) | y^((i)))) p(y^((i)))
+$
+\
+
+~~~~对上述似然函数使用MLE可以得到对参数的最大似然估计结果：
+
+#align(center)[
+  $
+    phi_(k | y=1) &= ( sum_(i=1)^m 1{y^((i)) = 1} (sum_(j=1)^(n_i) 1{ x_j^((i)) = k}) ) / ( sum_(i=1)^m (1{ y^((i)) = 1) } n_i ), \
+    phi_(k | y=0) &= ( sum_(i=1)^m 1{y^((i)) = 0} (sum_(j=1)^(n_i) 1{ x_j^((i)) = k})) / ( sum_(i=1)^m (1{ y^((i)) = 0 } n_i) ), \
+    phi_y &= ( sum_(i=1)^m 1{ y^((i)) = 1 } ) / m
+  $
+]
+
+~~~~比如说简单解读理解一下 $phi_(k | y=0)$ 的计算过程: 首先选择所有 y=0 的样本，查看里面所有单词，再看里面单词 $k$ 数量的占比是多少，比值就是我们对于单词 $k$ 出现在 $y=0$ 样本中的任意位置的概率大小估计。
+\
+\
+
+~~~~如果要使用拉普拉斯平滑来估计 $phi_(k | y=0)$ 和 $phi_(k | y=1)$，就在分子上加 1，分母上加 $|V|$ :
+
+#align(center)[
+  $
+    phi_(k | y=1) &= ( sum_(i=1)^m 1{y^((i)) = 1} (sum_(j=1)^(n_i) 1{ x_j^((i)) = k}) #text(fill: red)[+1]) / ( sum_(i=1)^m (1{ y^((i)) = 1) } n_i #text(fill: red)[+|V|]) \
+    phi_(k | y=0) &= ( sum_(i=1)^m 1{y^((i)) = 0} (sum_(j=1)^(n_i) 1{ x_j^((i)) = k}) #text(fill: red)[+1]) / ( sum_(i=1)^m (1{ y^((i)) = 0 } n_i) #text(fill: red)[+|V|] )
+  $
+]
+
+注意：$|V|$ 的由来：\
+~~~~在多项式模型中，所有可能的单词一共有 $|V|$ 个(vocab size)。对于 $y=1$ 的所有样本，我们必须保证：
+$
+  sum_(k=1)^(|V|) phi_(k | y=1) = 1
+$
+~~~~也即在平滑之后，概率仍将满足归一化条件，因此分母将加上$|V|$ (词汇表大小)
+
+\
+\
+
+补充：如果处理到的词不在词汇表中？\
+法一：直接丢弃\
+法二：将所有稀有词映射到一个特殊标记 UNK
+
+\
+\
+
+Advantages of Naive Bayes:\
+computaionally efficient (don't require iterative algorithm to update parameters); and quick to implement
+
+\
+\
+\
+\
+\
+\
+
+
+
+== 2. Support Vector Machine (SVM)
+\
+
+(help to find _*non-linear*_ decision boudaries)
+\
+\
+\
+
+- Lead-in
+~~~~Imagine we have this dataset（配一个非线性边界分类的数据点图）：
+
+~~~~Ordinary Logistic regression only gives out linear decision boundaries because the it fits the function: $theta^T x$ —— a hyperplane.
+\
+~~~~However, if we change our feature vector
+$x$ from
+
+#set math.mat(delim: "[")
+$ x = mat(x_1; x_2) $
+
+to
+
+#set math.mat(delim: "[")
+$ x = mat(x_1; x_2; x_1^2 + x_2^2) $
+
+then the decision boudary would be:
+$
+  theta^T x = theta_1 x_1 + theta_2 x_2 + theta_3 (x_1^2 + x_2^2) = 0
+$
+
+~~~~Thus it's a non-linear boudary !
+
+\
+\
+
+~~~~However, the choosing of the features can be hard because we don't know what set of feature could get us a right decision boundary. \
+~~~~What SVM does is that it's able to derive an algorithm that takes input features $x_1, x_2 dots$ and maps them to a higher dimensional set of features. And then it applies a linear classifier to learn non-linear decision boudaries (similar to logistic regression).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
