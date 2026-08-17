@@ -1941,21 +1941,54 @@ $
 ~~~~However, the choosing of the features can be hard because we don't know what set of feature could get us a right decision boundary. \
 ~~~~What SVM does is that it's able to derive an algorithm that takes input features $x_1, x_2 dots$ and maps them to a higher dimensional set of features. And then it applies a linear classifier to learn non-linear decision boudaries (similar to logistic regression).
 
+\
+\
+\
+
+
+- basic building block —— *Optimal Margin Classifier*
+(the dataset is linearly separable)
+\
+\
+
+_Define_: *functional margin*
+\
+~~~~The functional margin of a classifier measures how confidently and accurately calssify an example.
+\
+
+e.g: binary classification + logistic regression
+\
+$
+  h_theta (x) & = g(theta^T x) \
+         g(z) & = 1 / (1 + e^(-z))
+$
+~~~~Thus the classfier will predict $1$ if $theta^T x >= 0$ ($h_theta (x) >= 0.5$), otherwise it'll predict $0$ .
+\
+
+~~~~Therefore, we hope that if $y^((i)) = 1$, $theta^T x >> 0$;
 
 
 
 
 
 
+\
+\
+\
 
 
 
 
 
+- *Kernels*
+\
+~~~~The kernels will allow us to choose an infinite large set of features.
 
 
 
+\
 
+- Insaparable case
 
 
 #pagebreak()
