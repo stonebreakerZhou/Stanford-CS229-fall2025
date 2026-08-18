@@ -1965,8 +1965,7 @@ $
 ~~~~Thus the classfier will predict $1$ if $theta^T x >= 0$ ($h_theta (x) >= 0.5$), otherwise it'll predict $0$ .
 \
 
-~~~~Therefore, we hope that if $y^((i)) = 1$, $theta^T x >> 0$;
-
+~~~~Therefore, if $y^((i)) = 1$, we hope that $theta^T x >> 0$; and if $y^((i))=0$, we hope that $theta^T x <<0$.
 
 
 
