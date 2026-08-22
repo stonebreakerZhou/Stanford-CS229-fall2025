@@ -1966,16 +1966,125 @@ $
 \
 
 ~~~~Therefore, if $y^((i)) = 1$, we hope that $theta^T x >> 0$; and if $y^((i))=0$, we hope that $theta^T x <<0$.
+\
+\
 
+- - *Geometric margin*
 
+~~~~Assume the dataset is linearly separable. （配手绘图，两种分割线的比较）
+\
+~~~~What SVM does in the low-dim space is an optimal margin classifier, which aims to find a separation line to maximize the geometric margin.
+\
+\
 
+*Notation changes*:\
+① labels $y in {-1, +1}$\
 
+② have an $h$ output value $in {-1, +1}$ \
+(instead of outputing an hypothesis probability in logistic regression, SVMs will output ${-1, +1}$ in  cases below)
+$ g(z) = cases(1 #h(1.8em) "if" z>=0, -1 #h(1em) "otherwise.") $
+~~~~That implies an hard output transition from $-1$ to $+1$.
 
+\
+\
+
+- - *Parameters*
+~~~~1. Previously, in logistic regression: (parameter: $theta$)
+$
+  h_(theta) (x) = g(theta^T x) = 1 / (1 + e^(- theta^T x)), #h(1em)x in RR^(n+1), x_0 = 1
+$
+\
+
+~~~~2. Here in SVM: (parameters: $w, b$)
+$
+  h_(w, b) (x) = g(w^T x + b), #h(1em) x in RR^n, b in RR
+$
+(no longer the constraint that $x_0 = 1$)\
+\
+
+~~~~One way to intuitively understand the form transition of the parameters is:
+#set math.mat(delim: "[")
+$
+  theta = mat(theta_0; theta_1; dots.v; theta_n), #h(1.5em) b = theta_0, #h(0.5em) w= mat(theta_1; dots.v; theta_n)
+$
 
 \
 \
 \
+- -
+~~~~Now we come back to the definition of _functional margin_ , and applies it to SVM.
+\
+\
+\
 
+*_Define_* : functional margin of hyperplane defined by ($w, b$) wrt(with respect to) $(x^((i)), y^((i)))$ :
+
+$
+  hat(gamma)^((i)) = y^((i)) (w^T x + b)
+$
+
+~~~~$w^T x + b$ actually defines a hyperplane separating out positive and negative examples.
+\
+
+~~~~Here we want our classifier to achieve a large functional margin $hat(gamma)^((i))$.\
+~~~~① If $y^((i)) = 1$, we want $w^T x +b >>0$;\
+~~~~② If $y^((i)) = -1$, we want $w^T x+ b <<0$.
+\
+
+~~~~Combining the two statements above, we basically want to maximize $gamma^((i))$ in both cases. (want $gamma^((i))>>0$)
+\
+~~~~If $hat(gamma)^((i)) > 0$, that means $h(x^((i)))=y^((i))$.(the algorithm gets the right label)
+\
+\
+\
+
+*_Define_* : functional margin wrt(with respect to) training set :
+$
+  hat(gamma) = min_(i = 1, dots, m) hat(gamma)^((i))
+$
+
+~~~~In the previous definition we actually define functional margins with respect to a _single training example_. ( how are we doing well on that training example ?) And now this definition actually ask : how well are you doing _on the worst example_ in the training set ?
+\
+(note that here we assume that the training set is linearly separable)
+\
+\
+
+~~~~We find that it's simple to cheat on the functional margin value if we just multiply our parameters $w, b$ by a factor of $k$. So a common way to avoid this cheating is to normalize the length of all the parameters !\
+e.g: we impose a constraint:
+$
+  ||w|| = 1
+$
+or do the replacement:
+$
+  (w, b) -> (w/(||w||), b/(||w||))
+$
+\
+
+*_Define_* : Geometric margin
+\
+
+- geometric margin wrt a single example
+~~~~If we have a linear classifie : $w^T x + b =0$（配一张线性分类例图）\
+~~~~If we have a positive example $(x^((i)), y^((i)))$ (data point), and our classifier classifies this example correctly. Now we define the geometric margin of this training example is equal to the distance(Euclidean distance) between the data point and the decision boundary.
+
+*_Define_* : Geometric margin of hyperplane $(w, b)$ wrt $(x^((i)), y^((i)))$ :
+$
+  gamma^((i)) = (y^((i))(w^T x^((i))+b)) / (||w||)
+$
+\
+
+~~~~Relation between geometric margin and functional margin:
+$
+  "geometric" = ("functional") / (||w||)
+$
+
+*_Define_*: Geometric margin wrt the training set :
+$
+  gamma = min_(i = 1, dots, m) gamma^((i))
+$
+Note: functional: $hat(gamma)$; ~~~~geometric: $gamma$
+\
+\
 
 
 
