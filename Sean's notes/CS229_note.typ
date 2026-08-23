@@ -1912,7 +1912,7 @@ computaionally efficient (don't require iterative algorithm to update parameters
 \
 \
 
-- Lead-in
+- *Lead-in*
 ~~~~Imagine we have this dataset（配一个非线性边界分类的数据点图）：
 
 ~~~~Ordinary Logistic regression only gives out linear decision boundaries because the it fits the function: $theta^T x$ —— a hyperplane.
@@ -1944,51 +1944,57 @@ $
 \
 \
 \
-
-
-- basic building block —— *Optimal Margin Classifier*
-(the dataset is linearly separable)
 \
+- *Fundamental intuitions about functional and geometric margins*
 \
-
-_Define_: *functional margin*
-\
-~~~~The functional margin of a classifier measures how confidently and accurately calssify an example.
+- - *functional margin*
+~~~~The functional margin of a classifier measures how confidently and accurately classify an example.
 \
 
 e.g: binary classification + logistic regression
 \
 $
-  h_theta (x) & = g(theta^T x) \
-         g(z) & = 1 / (1 + e^(-z))
+  h_theta (x) & = g(theta^T x) = 1 / (1 + e^(-theta^T x))
 $
 ~~~~Thus the classfier will predict $1$ if $theta^T x >= 0$ ($h_theta (x) >= 0.5$), otherwise it'll predict $0$ .
-\
 
 ~~~~Therefore, if $y^((i)) = 1$, we hope that $theta^T x >> 0$; and if $y^((i))=0$, we hope that $theta^T x <<0$.
+\
+\
+~~~~这个地方我们已然发现之前定义中标签 $y$ 取值的不便性：我们无法用 $y dot (theta^T x)$ 来统一化我们最后最大化/最小化的函数目标，以作为我们的评判标准。（因为当 $y=0$ 时上述式子必然为0！）所以我们会引出后面的 Notation changes 。
 \
 \
 
 - - *Geometric margin*
 
-~~~~Assume the dataset is linearly separable. （配手绘图，两种分割线的比较）
+~~~~Assume the dataset is linearly separable.（所有样本都能被正确分类） （配手绘图，两种分割线的比较）
 \
 ~~~~What SVM does in the low-dim space is an optimal margin classifier, which aims to find a separation line to maximize the geometric margin.
 \
 \
+\
 
-*Notation changes*:\
+- *Notation changes in SVMs* :\
+
+~~~~由于我们在 functional margin intuition处看到之前使用的 $y in {0, 1}$ 这种标签的不便性，我们采用以下的标签定义：\
+
 ① labels $y in {-1, +1}$\
 
-② have an $h$ output value $in {-1, +1}$ \
+② have an output value $h in {-1, +1}$ \
 (instead of outputing an hypothesis probability in logistic regression, SVMs will output ${-1, +1}$ in  cases below)
 $ g(z) = cases(1 #h(1.8em) "if" z>=0, -1 #h(1em) "otherwise.") $
-~~~~That implies an hard output transition from $-1$ to $+1$.
+~~~~That implies an hard output transition from $-1$ to $+1$. （这个在后面的 Optimal margin Classifier 中可以找到对应的原因，读者可以先暂置这一点，等会儿看完这一节后回头反思这个地方这样定义的原因）
 
 \
 \
+\
+\
+\
+\
+\
 
-- - *Parameters*
+
+- *Parameters*
 ~~~~1. Previously, in logistic regression: (parameter: $theta$)
 $
   h_(theta) (x) = g(theta^T x) = 1 / (1 + e^(- theta^T x)), #h(1em)x in RR^(n+1), x_0 = 1
@@ -2009,15 +2015,18 @@ $
 $
 
 \
-\
-\
-- -
+
+
+
+- - *Formal Definitions*
 ~~~~Now we come back to the definition of _functional margin_ , and applies it to SVM.
 \
 \
 \
 
-*_Define_* : functional margin of hyperplane defined by ($w, b$) wrt(with respect to) $(x^((i)), y^((i)))$ :
+1. Functional Margin
+\
+1) *_Define_* : functional margin of hyperplane defined by ($w, b$) wrt(with respect to) $(x^((i)), y^((i)))$ :
 
 $
   hat(gamma)^((i)) = y^((i)) (w^T x + b)
@@ -2038,7 +2047,7 @@ $
 \
 \
 
-*_Define_* : functional margin wrt(with respect to) training set :
+2) *_Define_* : functional margin wrt(with respect to) training set :
 $
   hat(gamma) = min_(i = 1, dots, m) hat(gamma)^((i))
 $
@@ -2059,15 +2068,18 @@ $
   (w, b) -> (w/(||w||), b/(||w||))
 $
 \
-
-*_Define_* : Geometric margin
 \
+
+2. Geometric margin
 
 - geometric margin wrt a single example
 ~~~~If we have a linear classifie : $w^T x + b =0$（配一张线性分类例图）\
 ~~~~If we have a positive example $(x^((i)), y^((i)))$ (data point), and our classifier classifies this example correctly. Now we define the geometric margin of this training example is equal to the distance(Euclidean distance) between the data point and the decision boundary.
+\
+\
+\
 
-*_Define_* : Geometric margin of hyperplane $(w, b)$ wrt $(x^((i)), y^((i)))$ :
+1) *_Define_* : Geometric margin of hyperplane $(w, b)$ wrt $(x^((i)), y^((i)))$ :
 $
   gamma^((i)) = (y^((i))(w^T x^((i))+b)) / (||w||)
 $
@@ -2077,27 +2089,107 @@ $
 $
   "geometric" = ("functional") / (||w||)
 $
-
-*_Define_*: Geometric margin wrt the training set :
+\
+\
+2) *_Define_*: Geometric margin wrt the training set :
 $
   gamma = min_(i = 1, dots, m) gamma^((i))
 $
 Note: functional: $hat(gamma)$; ~~~~geometric: $gamma$
 \
 \
+\
 
+
+- - *Optimal Margin Classifier*
+
+~~~~*_Goal_* : #underline[Choose $w, b$ to maximize $gamma$ (geometric margin).]
+
+$
+  max_(gamma, w, b) gamma\
+  s.t. #h(0.8em) (y^((i)) (w^T x^((i)) + b)) / (||w||)>= gamma #h(1em) i=1, dots,m
+$
+
+~~~~Thus we want to maximize $gamma$ but still keeping every geometric margin bigger than $gamma$.
+\
+~~~~It turns out that it's a _non-convex_ optimization problem so it's difficult to solve without gradient descent. (to find out *$w, b$*)
+
+\
+~~~~As $gamma = hat(gamma) / (||w||)$, our *_goal_* is :
+$
+  max_(w, b) hat(gamma) / (||w||)
+$
+($hat(gamma)$ is the smallest functional margin in the training dataset)
+
+~~~~现在，我们考虑任意地对 $w, b$ 进行相同倍数 $k$ 的缩放，最后得到的决策边界（超平面）$w^T x + b = 0$ 会保持不变，那么我们最后得到的几何间隔 $gamma$ 大小也就会保持不变，但是函数间隔 $hat(gamma)$ 的大小将会被缩放相同的倍数 $k$ 。
+
+~~~~既然缩放 $w, b$ 不会改变最后的目标函数 $gamma$ 的大小，只会改变 $hat(gamma)$ 的大小，那么我们不妨假设 $ hat(gamma) = 1 $
+~~~~这样一来，我们最后要最大化的目标函数就是
+$
+  gamma = 1 / (||w||)
+$
+~~~~现在看出，我们的目标转变为
+$
+  min_(w, b) ||w||
+$
+也即等价于（为了求导方便，但是最优解位置不变）
+$
+  min_(w, b) 1/2 ||w||^2
+$
+
+~~~~现在来看下应该施加怎样的约束条件：
+从最开始的
+$
+  (y^((i)) (w^T x^((i)) + b)) / (||w||)>= gamma #h(1em) i=1, dots,m
+$
+~~~~我们简单进行变形：
+$
+  y^((i)) (w^T x^((i)) + b) >= gamma ||w|| #h(1em) i=1, dots, m
+$
+~~~~由于
+$
+  gamma ||w|| = hat(gamma) / (||w||) dot ||w|| = hat(gamma) = 1
+$
+
+~~~~所以我们要最小化的凸二次目标函数对应的约束条件就是：
+$
+  y^((i)) (w^T x^((i)) + b) >= 1 #h(1em) i=1, dots,m
+$
+
+\
+~~~~Therefore, we can actually reformulate the previous problem into an equivalence:
+$
+  min_(w, b) ||w||^2\
+  s.t. #h(0.8em) y^((i)) (w^T x^((i)) + b) >= 1
+$
+~~~~Now this is a convex optimization problem.
+\
+\
+\
+\
+
+
+~~~~The assumption is that the dataset is linearly separable.（每一个样本必须可以被正确分类！）\
+
+~~~~Then, optimal margin classifier serves as the basic building block of SVM.
+\
+
+
+\
+\
+\
 
 
 
 - *Kernels*
 \
-~~~~The kernels will allow us to choose an infinite large set of features.
+~~~~The kernels will allow us to choose an infinite large set of features, which will be discussed in lectures later.
 
 
 
-\
 
-- Insaparable case
+
+
 
 
 #pagebreak()
