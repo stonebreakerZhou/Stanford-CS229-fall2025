@@ -2181,8 +2181,8 @@ $
 \
 ~~~~Therefore, we can actually reformulate the previous problem into an equivalence:
 $
-  min_(w, b) ||w||^2\
-  s.t. #h(0.8em) y^((i)) (w^T x^((i)) + b) >= 1
+  min_(w, b) (||w||^2) / 2\
+  s.t. #h(0.8em) y^((i)) (w^T x^((i)) + b) >= 1 #h(1em) i=1, dots, m
 $
 ~~~~Now this is a convex optimization problem.
 \
@@ -2208,10 +2208,134 @@ $
 
 
 
+#pagebreak()
+
+
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec VII]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== 1.
+\
+
+- *Recap* :\
+~~~~In last lecture, we knew optimal margin classifier's goal is:
+
+$
+  max_(gamma, w, b) gamma\
+  s.t. #h(0.8em) (y^((i)) (w^T x^((i)) + b)) / (||w||)>= gamma #h(1em) i=1, dots,m
+$
+
+where the constraint means: "every example has geometric margin greater than or equal to $gamma$", but we want to set $gamma$ as big as possible.
+\
+~~~~So essentially we have to play with parameters $w, b$ to _maximize the worst geometric margin in the dataset_. (because that's basically the threshold of $gamma$)
+\
+\
+~~~~And with our previously derived properties, we change our final goal to:
+$
+  min_(w, b) (||w||^2) / 2\
+  s.t. #h(0.8em) y^((i)) (w^T x^((i)) + b) >= 1 #h(1em) i=1, dots, m
+$
+\
+\
+\
+\
+- *Additional Assumption* : *representation theorem*
+~~~~In order to derive SVM, we're gonna make an additional restriction:\
+~~~~_*Assumption*_: _Suppose_ $w$ can be represented as a linear combination of the training examples :
+$
+  w = sum_(i=1)^m alpha_i x^((i))
+$
+(this introduction of representation theorem can be proved in a long procedure...)
+\
+
+
+~~~~Let's rewrite the assumption adding $y^((i))$. In this case, $y^((i)) = ±1$, so this makes sense :
+$
+  w = sum_(i=1)^m alpha_i y^((i)) x^((i))
+$
+~~~~Then let's see some intuitions about the correctness of this theorem.
+
+\
+
+*Intuition \#1*：\
+~~~~In logistic regression, we run this iterative gradient descent to update the parameter $theta$ :
+$
+  theta & = 0 #h(2em) "(initialization)" \
+  theta & := theta - alpha(h_theta (x^((i))) - y^((i))) x^((i)) #h(1em)"(update)"
+$
+~~~~In updating, we can see $theta$ will always end up as a linear combination of the training examples $x^((i))$.
+\
+~~~~The same happens in batch gradient descent.
+\
+\
+
+*Intuition \#2*:\
+~~~~It turns out that vector $w$ is always at $90$ degrees to the decision boundary, and the decision boudary separates where we predict positive from where we predict negative. （配一张简单的手绘示意图）
+\
+~~~~Using linear algebra, we can show that ww lies in the span of the training samples. $w$ pins the direction of the decision boundary. ($b$ only changes the relative position)
+(这里配两张手绘图：两个样本的；以及三维空间中特殊$x_3 = 0$的)
+
+
 
 #pagebreak()
 
 
+
+- *Goal & Optimization Reformulation*
+
+previously, we have :
+$
+  min_(w, b) (||w||^2) / 2\
+  s.t. #h(0.8em) y^((i)) (w^T x^((i)) + b) >= 1 #h(1em) i=1, dots, m
+$
+\
+~~~~1) Subsituting into $w$, the optimization goal can be reformulated as :
+$
+  min_(w, b) (||w||^2) / 2 &= min_(w, b) 1/2 (sum_(i=1)^m alpha_i y^((i))x^((i)))^T (sum_(j=1)^m alpha_j y^((j))x^((j)))\
+  &= min_(w, b) 1/2 sum_(i=1)^m sum_(j=1)^m (alpha_i alpha_j y^((i)) y^((j)) x^(i)^T x^((j)))\
+  &= min_(w, b) 1/2 sum_(i=1)^m sum_(j=1)^m (alpha_i alpha_j y^((i)) y^((j)) #text(fill: blue)[$< x^((i)), x^((j))>$])
+$
+(note that "$<x,z>$" means inner product)
+\
+\
+
+~~~~2) Also, the restriction can be reformulated as:
+$
+                                                   y^((i)) (w^T x^((i)) + b) & >= 1 \
+              <=> y^((i))(sum_(j=1)^m alpha_j y^((j)) x^((j)))^T x^((i)) + b & >=1 \
+  <=> y^((i))
+  (sum_(j=1)^m alpha_j y^((j)) #text(fill: blue)[$< x^((j)), x^((i))>$] + b) & >=1
+$
+~~~~The only place that the feature vectors appears is in the inner product. So if we can compute this efficiently, we can handle with manipulating even infinite dimensional feature vectors.
+\
+\
+\
+
+~~~~And we can simplify this optimization further to an *"Dual optimization problem "* : (using convex optimization theory or we can see it as an pure algebra method)
+$
+  max sum_(i=1)^m alpha_i - 1/2 sum_(i=1)^m sum_(j=1)^m y^((i))y^((j))alpha_i alpha_j <x^((i)), x^((j))>\
+  s.t #h(0.8em) alpha_i >=0 ,\
+  sum_(i=1)^m y^((i)) alpha_i = 0 .
+$
+
+
+
+
+
+
+
+
+#pagebreak()
 
 
 
