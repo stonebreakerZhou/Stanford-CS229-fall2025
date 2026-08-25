@@ -1905,15 +1905,20 @@ computaionally efficient (don't require iterative algorithm to update parameters
 
 
 == 2. Support Vector Machine (SVM)
-\
+
 
 (help to find _*non-linear*_ decision boudaries)
 \
 \
-\
+
 
 - *Lead-in*
 ~~~~Imagine we have this dataset（配一个非线性边界分类的数据点图）：
+
+#figure(
+  image("images/Lec6_non-linear-classification.jpg", width: 50%),
+  caption: [non-linear classification],
+)
 
 ~~~~Ordinary Logistic regression only gives out linear decision boundaries because the it fits the function: $theta^T x$ —— a hyperplane.
 \
@@ -1934,7 +1939,10 @@ $
 $
 
 ~~~~Thus it's a non-linear boudary !
-
+#figure(
+  image("images/Lec6_non-linear-boudary.jpg", width: 80%),
+  caption: [non-linear decision boundary],
+)
 \
 \
 
@@ -1945,6 +1953,8 @@ $
 \
 \
 \
+\
+
 - *Fundamental intuitions about functional and geometric margins*
 \
 - - *functional margin*
@@ -1965,14 +1975,23 @@ $
 \
 \
 
+
+
 - - *Geometric margin*
 
 ~~~~Assume the dataset is linearly separable.（所有样本都能被正确分类） （配手绘图，两种分割线的比较）
 \
+
 ~~~~What SVM does in the low-dim space is an optimal margin classifier, which aims to find a separation line to maximize the geometric margin.
+#figure(
+  image("images/Lec6_geometric-margin-comparison.jpg", width: 80%),
+  caption: [maximizing geometric margin],
+)
 \
-\
-\
+
+
+
+
 
 - *Notation changes in SVMs* :\
 
@@ -1985,9 +2004,6 @@ $
 $ g(z) = cases(1 #h(1.8em) "if" z>=0, -1 #h(1em) "otherwise.") $
 ~~~~That implies an hard output transition from $-1$ to $+1$. （这个在后面的 Optimal margin Classifier 中可以找到对应的原因，读者可以先暂置这一点，等会儿看完这一节后回头反思这个地方这样定义的原因）
 
-\
-\
-\
 \
 \
 \
@@ -2024,8 +2040,10 @@ $
 \
 \
 
-1. Functional Margin
+*1. Functional Margin*
 \
+\
+
 1) *_Define_* : functional margin of hyperplane defined by ($w, b$) wrt(with respect to) $(x^((i)), y^((i)))$ :
 
 $
@@ -2070,13 +2088,16 @@ $
 \
 \
 
-2. Geometric margin
-
-- geometric margin wrt a single example
-~~~~If we have a linear classifie : $w^T x + b =0$（配一张线性分类例图）\
+*2. Geometric margin*
+\
+\
+- *geometric margin wrt a single example*
+~~~~If we have a linear classifier : $w^T x + b =0$\
 ~~~~If we have a positive example $(x^((i)), y^((i)))$ (data point), and our classifier classifies this example correctly. Now we define the geometric margin of this training example is equal to the distance(Euclidean distance) between the data point and the decision boundary.
-\
-\
+#figure(
+  image("images/Lec6_geometric_margin.jpg", width: 80%),
+  caption: [geometric margin illustration],
+)
 \
 
 1) *_Define_* : Geometric margin of hyperplane $(w, b)$ wrt $(x^((i)), y^((i)))$ :
@@ -2099,9 +2120,10 @@ Note: functional: $hat(gamma)$; ~~~~geometric: $gamma$
 \
 \
 \
-
-
-- - *Optimal Margin Classifier*
+\
+\
+\
+- *Optimal Margin Classifier*
 
 ~~~~*_Goal_* : #underline[Choose $w, b$ to maximize $gamma$ (geometric margin).]
 
@@ -2172,12 +2194,7 @@ $
 ~~~~The assumption is that the dataset is linearly separable.（每一个样本必须可以被正确分类！）\
 
 ~~~~Then, optimal margin classifier serves as the basic building block of SVM.
-\
 
-
-\
-\
-\
 
 
 
