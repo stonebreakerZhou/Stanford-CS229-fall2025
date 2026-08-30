@@ -2224,7 +2224,7 @@ $
   ]
 ]
 
-== 1.
+== Kernels & Soft Margin SVM
 \
 
 - *Recap* :\
@@ -2280,16 +2280,40 @@ $
 \
 
 *Intuition \#2*:\
-~~~~It turns out that vector $w$ is always at $90$ degrees to the decision boundary, and the decision boudary separates where we predict positive from where we predict negative. （配一张简单的手绘示意图）
+~~~~It turns out that vector $w$ is always at $90$ degrees to the decision boundary, and the decision boudary separates where we predict positive from where we predict negative.
+#figure(
+  image("images/Lec7_w_perpendicular_boundary.jpg", width: 60%),
+  caption: [w is orthogonal to the boundary],
+)
 \
-~~~~Using linear algebra, we can show that ww lies in the span of the training samples. $w$ pins the direction of the decision boundary. ($b$ only changes the relative position)
-(这里配两张手绘图：两个样本的；以及三维空间中特殊$x_3 = 0$的)
+~~~~Using linear algebra, we can show that w lies in the span of the training samples. $w$ pins the direction of the decision boundary. ($b$ only changes the relative position)
+(两张手绘图：两个样本的；以及三维空间中特殊$x_3 = 0$的)
+#figure(
+  image("images/Lec7_w-boudary_eg1.jpg", width: 70%),
+  caption: [orthogonality e.g 1],
+)
+#figure(
+  image("images/Lec7_w-boudary_eg2.jpg", width: 70%),
+  caption: [orthogonality e.g 2],
+)
 
-
-
-#pagebreak()
-
-
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
 
 - *Goal & Optimization Reformulation*
 
@@ -2298,7 +2322,9 @@ $
   min_(w, b) (||w||^2) / 2\
   s.t. #h(0.8em) y^((i)) (w^T x^((i)) + b) >= 1 #h(1em) i=1, dots, m
 $
-\
+
+
+
 ~~~~1) Subsituting into $w$, the optimization goal can be reformulated as :
 $
   min_(w, b) (||w||^2) / 2 &= min_(w, b) 1/2 (sum_(i=1)^m alpha_i y^((i))x^((i)))^T (sum_(j=1)^m alpha_j y^((j))x^((j)))\
@@ -2320,15 +2346,548 @@ $
 \
 \
 \
+\
+\
+\
 
-~~~~And we can simplify this optimization further to an *"Dual optimization problem "* : (using convex optimization theory or we can see it as an pure algebra method)
+- - And we can simplify this optimization further to an *"Dual optimization problem" * : (using convex optimization theory or we can see it as an pure algebra method (cancel out $b$))
 $
   max sum_(i=1)^m alpha_i - 1/2 sum_(i=1)^m sum_(j=1)^m y^((i))y^((j))alpha_i alpha_j <x^((i)), x^((j))>\
   s.t #h(0.8em) alpha_i >=0 ,\
   sum_(i=1)^m y^((i)) alpha_i = 0 .
 $
 
+~~~~Then,\
+1) we solve $alpha_i 's$ b\
+2) To make prediction: \
+~~~~compute : \
+$
+  h_(w, b)(x) & = g(w^T x + b) \
+              & = g((sum_(i=1)^m alpha_i y^((i)) x^((i)))^T x + b) \
+              & = g(sum_(i=1)^m alpha_i y^((i)) ((x^((i)))^T x) + b) \
+              & = g(sum_(i=1)^m alpha_i y^((i)) <x^((i)), x> + #h(0.2em)b)
+$
 
+
+\
+\
+\
+\
+\
+
+- *Kernel trick*
+\
+~~~~*_1)_* *Write the whole algorithm in terms of ~~~~~~~~$<x^((i)), x^((j))>$* (inner product of two different training examples, or $i.e. <x, z>$ to simplify the notation)
+\
+
+~~~~*_2)_* *Let there be some mapping from the original input features $X -> Phi(X)$* (high dimensional set of features)\
+e.g.
+$
+  mat(x_1; x_2) -> Phi(x)=mat(x_1; x_2; x_1 x_2; x_1^2x_2; dots.v)
+$
+
+~~~~Thus $Phi(x)$ could be infinite dimensional.
+\
+
+~~~~*_3)_* Find a way to compute :
+*$ K(x, z) = Phi(x)^T Phi(z) $*
+~~~~This is the kernel function, and there are tricks to effficient compute the dot product even when $Phi(x)$ and $Phi(z)$ are incredibly  high dimensional.
+
+
+
+
+~~~~_*4)*_ *Replace $<x, z>$ in the algorithm with $K(x, z)$* \
+~~~~~Because if we could do this, we are actually running the whole learning algorithm on the high dimensional set of features.
+\
+~~~~Running algorithm on high dimension could be very computationally expensive, so the essence of kernel trick is that because we've written the whole algorithm in an inner product form, so we can always just compute the kernels, no need to explicitly compute $Phi(x)$.
+
+\
+\
+\
+\
+\
+
+- - *A simple example of kernels*\
+~~~~1) Suppose :
+$
+  x = mat(x_1; x_2; x_3) in RR^n arrow^("map") Phi(x) = mat(x_1x_1; x_1x_2; x_1x_3; x_2x_1; x_2x_2; x_2x_3; x_3x_1; x_3x_2; x_3x_3) in RR^(n^2)
+$
+
+$
+  Phi(z) = mat(z_1z_1; z_1z_2; z_1z_3; z_2z_1; z_2z_2; z_2z_3; z_3z_1; z_3z_2; z_3z_3) in RR^(n^2)
+$
+
+~~~~Because $Phi(x)$ is $n^2$-dimensional, we need *$O(n^2)$* time to compute $Phi(x)$ or compute $Phi(x)^T Phi(z)$ explicitly.
+\
+\
+~~~~Now if we use the kernel trick, we'll do it in a better way.
+$
+  K(x, z) = Phi(x)^T Phi(z) =^("proved") (x^T z)^2
+$
+~~~~Why efficient ? Remember $x, z in RR^n$, so $x^T z$ only need *$O(n)$* time to compute. Then we just have to square this scalar.
+\
+~~~~So we just have to do this proving:
+$
+  x^T z = sum_(i=1)^n x_i z_i
+$
+~~~~As
+$
+  (x^T z)^2 & = (sum_(i=1)^n x_i z_i)(sum_(j=1)^n x_j z_j) \
+            & = sum_(i=1)^n sum_(j=1)^n x_i z_i x_j z_j \
+            & = sum_(i=1)^n sum_(j=1)^n (x_i x_j)(z_i z_j)
+$
+~~~~Now if we take a look at the previous  $Phi(x)^T Phi(z)$, we'll see they are exactly the same !
+（此处可以配一张向量点乘配对手绘图）\
+#figure(
+  image("images/Lec7_Phi_dot-product.jpg", width: 70%),
+  caption: [dot product illustraion],
+)
+\
+
+~~~~Therefore :
+$
+  Phi(x)^T Phi(z) =^("proved") (x^T z)^2
+$
+
+\
+\
+\
+\
+\
+
+~~~~ 2) Now if do some little changes to the kernel function:
+$
+  K(x, z) = (x^T z + c)^2, #h(1em) c in RR("a constant")
+$
+~~~~That's equal to modifying the features as follows:
+$
+  Phi(x) = mat(x_1x_1; x_1x_2; x_1x_3; x_2x_1; x_2x_2; x_2x_3; x_3x_1; x_3x_2; x_3x_3; sqrt(2c)x_1; sqrt(2c)x_2; sqrt(2c)x_3)
+$
+
+\
+~~~~3) If got changed to :
+$
+  K(x, z) = (x^T z + c)^d, #h(1em)c,d in RR
+$
+~~~~This responds to :\
+
+#set math.mat(delim: "(")
+~~~~$Phi(x)$ has all $mat(n+d; d)$ features of monomials up to order $d$.
+
+\
+
+Summary:\
+
+~~~~*SVM = Optimal margin classifier +  kernel trick*
+\
+\
+\
+
+好的可视化视频：\
+https://www.youtube.com/watch?v=OdlNM96sHio
+\
+\
+
+
+~~~~So SVM actually find a linear decision boudary (using optimal margin classifier) in a high-dimensional space ! And when we look at the original feature space we'll find a non-linear dicision boudary.
+\
+
+
+
+
+
+
+- - *How to make Kernels ?*（一个有效的Kernel应该满足怎样的性质？）
+\
+_Guiding principle_ :\
+~~~~*"If $x, z$ are 'similar', $K(x, z) = Phi(x)^T Phi(z)$ is 'large'* (the inner product of two similar vectors should be large). And the other way round." 有了这个指导性的直觉，我们相应的 kernel function 也应该满足当 $x, z$ 接近的时候值大，当不相近的时候值小。
+\
+\
+~~~~As the condition is that
+$
+  K(x,z) = Phi(x)^T Phi(z)
+$
+~~~~This puts some constraints on our kernel functions that we could choose:
+\
+
+①
+$
+  K(x, x) = Phi(x)^T Phi(x) >= 0
+$
+
+~~~~Let ${x^((1)), dots, x^((d))}$ be $d$ points.\
+~~~~Let $K in RR^(d times d)$ ("kernel matrix")
+$
+  K_(i j) = K(x^((i)), x^((j))) = Phi(x^((i)))^T Phi(x^((j)))
+$
+
+~~~~Therefore, given any vector $z$,
+$
+  z^T K z & = sum_(i) sum_j z_i K_(i j) z_j \
+          & = sum_i sum_j z_i (Phi(x^((i)))^T Phi(x^((j)))) z_j \
+          & = sum_i sum_j z_i #h(0.5em) (sum_k (Phi(x^((i))))_k (Phi(x^((j))))_k) #h(0.5em) z_j \
+          & = sum_k sum_i sum_j z_i #h(0.5em) (Phi(x^((i))))_k (Phi(x^((j)))_k #h(0.5em)z_j \
+          & = sum_k (sum_i z_i (Phi(x^((i))))_k)^2 \
+          & >=0
+$
+
+~~~~*So $K$ (the kernel matrix) is positive semi-definite !*
+(more generally, it's a sufficient condition for our $K$ to be a valid kernel function)
+（事实上，马上我们就会证明这个“半正定”的条件就是一个判定有效核的充分条件）
+
+
+
+
+
+
+
+
+*Mercer's Theorem* :\
+
+~~~~K is a valid kernel function \
+~$i.e #h(0.5em)exists$ $Phi #h(0.5em)s.t. #h(0.5em)K(x, z) = Phi(x)^T Phi(z)$\
+
+#text(fill: red)[*if and only if* \
+
+  ~~~~For any $d$ points ${x^((i)), dots, x^((d))}$, the corresponding kernel matrix $K$ is *_positive semi-definite_*.
+]
+
+\
+\
+\
+\
+\
+
+*Widely used kernels*:
+\
+\
+- - *Linear kernel*
+$
+  K(x, z) = x^T z
+$
+$
+  Phi(x) = x
+$
+~~~~(no high dimensional feature mapping)
+\
+\
+
+- - *Guassian kernel*
+$
+  K(x, z) = exp(- (||x- z||^2) / (2 sigma^2))
+$
+$
+  Phi(x) in RR^(infinity)
+$
+\
+- - *Polynomial kernel*
+$
+  K(x, z) = (x^T z)^d
+$
+$
+  Phi(x) in RR^(mat(n+d; d))
+$
+
+
+
+
+#pagebreak()
+
+
+
+
+
+~~~~我们不妨可以借助 Mercer's Theorem 来证明一下高斯核是一个有效的核：\
+~~~~首先，直觉上，当 $x,z$ 接近的时候 $K(x,z)$ 值较大，满足我们的直觉性原则。\
+
+~~~~现在来证明 $forall z; #h(1em) z^T K z>=0$, K 是高斯核对应的矩阵。\
+~~~~由于：
+$
+  K_(i j) = exp(- (||x^((i)) - x^((j))||^2) / (2 sigma^2))
+$
+（其中 ${x^((1)), dots, x^((i)), dots, x^((j)), dots}$是我们已经有的样本点）；所以原式为：
+
+$
+  z^T K z & = sum_i sum_j z_i K_(i j) z_j \
+          & = sum_i sum_j z_i exp(- (||x^((i)) - x^((j))||^2) / (2 sigma^2)) z_j \
+$
+
+
+法一 ：将$K_(i j) = exp(- (||x^((i)) - x^((j))||^2) / (2 sigma^2))$ 泰勒展开\
+
+~~~~由于：
+
+$
+  K_(i j) & = exp(- (||x^((i)) - x^((j))||^2) / (2 sigma^2)) \
+          & = exp(- 1/(2sigma^2)(x^((i) T) x^((i)) - 2x^((i) T) x^((j)) + x^((j) T) x^((j)))) \
+          & = exp(- (x^((i) T) x^((i))) / (2 sigma^2))
+            dot exp((x^((i) T) x^((j))) / (sigma^2))
+            dot exp(- (x^((j) T) x^((j))) / (2 sigma^2))
+$
+
+~~~~看得出来第1、3项都只与样本点 $x^((i)), x^((j))$ 的取值有关，且恒 $>0$，所以我们可以把这两块分别设为 $f(x^((i))), f(x^((j)))$，然后继续：
+
+$
+  z^T K z & = sum_i sum_j z_i (f(x^((i))) exp((x^((i) T) x^((j))) / (sigma^2)) f(x^((j)))) z_j
+$
+
+~~~~由于 $f(x^((i)), f(x^((j)))$ 分别只与 $i, j$ 有关，我们把它们合并进相应的系数里，并令：
+
+$
+  tilde(z)_i = z_i f(x^((i))); #h(1em) tilde(z)_j = z_j f(x^((j)))
+$
+
+~~~~那么原式变成：
+
+$
+  z^T K z = sum_i sum_j tilde(z)_i exp((x^((i) T) x^((j))) / (sigma^2)) tilde(z)_j
+$
+
+~~~~对指数部分作 Taylor expansion（展成无穷级数）：
+$
+  z^T K z & = sum_i sum_j tilde(z)_i tilde(z)_j sum_(k=0)^infinity 1 / (k!) ((x^((i) T) x^((j))) / (sigma^2))^k \
+          & = sum_(i) sum_(j) tilde(z)_i tilde(z)_j
+            [
+              sum_(k=0)^infinity 1 / (k! dot.c sigma^(2k)) (x^((i) T) x^( (j) ))^k
+            ]
+$
+
+\
+~~~~由于全是正数，绝对收敛，可以任意交换求和顺序：
+
+$
+  z^T K z & = sum_(k=0)^infinity 1 / (k! dot.c sigma^(2k)) [sum_(i) sum_(j) tilde(z)_i tilde(z)_j
+              (x^((i) T) x^( (j) ))^k
+            ]
+$
+
+~~~~我们惊奇地发现内层的 $(x^((i) T) x^( (j) ))^k$ 就是多项式核函数！于是代入多项式核函数（k次式的）对应的 $Phi_k$ ：
+$
+  (x^( (i) T ) x^( (j) ))^k = Phi_k (x^((i)))^T Phi_k (x^((j)))
+$
+
+~~~~所以原式变成：
+$
+  z^T K z = sum_(k=0)^infinity 1 / (k! dot.c sigma^(2k)) [sum_(i) sum_(j) tilde(z)_i tilde(z)_j
+    Phi_k (x^((i)))^T Phi_k (x^((j)))
+  ]
+$
+
+~~~~我们可以分别合并关于 $i, j$ 的求和：
+$
+  z^T K z = sum_(k=0)^infinity 1 / (k! dot.c sigma^(2k)) [ (sum_(i)tilde(z)_i Phi_k (x^((i))))^T sum_(j) tilde(z)_j
+    Phi_k (x^((j)))]
+$
+
+~~~~注意：$sum_(i)tilde(z)_i Phi_k (x^((i)))$ 与 $sum_(j) tilde(z)_j
+Phi_k (x^((j)))$ 二者其实一样！仅仅是哑变量 $i, j$ 的区别！\
+
+~~~~所以，右侧这个式子就是一个向量的模，也便 $>=0$ .
+\
+
+~~~~所以此时
+$
+  z^T K z & = sum_(k=0)^infinity 1 / (k! dot.c sigma^(2k))[ ||sum_i tilde(z)_i Phi_k (x^((i)))||^2 ] \
+          & >=0
+$
+
+~~~~利用 Mercer's Theorem, 则高斯核是一个有效的核。
+\
+\
+\
+法二：把里面的高斯函数那一块写成无穷积分形式（此处略）
+
+~~~~Note that the _kernel trick_ can be married with many other learning algorithms (e.g. PCA), but the most successful and widely used one is on SVM.
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Fix the assumption of linearly separable data
+  *
+\
+~~~~When we map our data set to a high-dimensional space, the dataset does become more separable. But if the data is noisy, we don't want to try too hard to separate every example, as it may lead to really complicated decision boundary.（这个地方配一个手绘示意图！）
+
+#figure(
+  image("images/Lec7_not-linearly-separable-data.jpg", width: 70%),
+  caption: [not linearly separable data boundary],
+)
+
+
+
+- - *$cal(l)_1$ norm soft margin SVM*
+\
+1) Previous basic algorithm:
+$
+  min 1/2 ||w||^2
+$
+$
+  s.t #h(1em) y^((i)) (w^T x^((i)) + b) >=1, #h(0.5em)i=1,dots,m
+$
+
+~~~~This constraint is actually saying:
+"we need every example's functional margin $>=1$".
+
+
+
+
+
+2) Now we're gonna loosen the restrictions :
+$
+  min 1/2 ||w||^2 + #text(fill: red)[$c sum_(i=1)^m xi_i$]\
+  s.t #h(1em) y^((i))(w^T x^((i)) + b) >= 1 - #text(fill: red)[$xi_i$], #h(1em)i=1,dots,m\
+  #text(fill: red)[$xi_i >= 0$]
+$
+
+~~~~As long as the functional margin $>=0$, we'd assume that this example is classified rightly.\
+
+~~~~Compared with SVM, SVM is asking for it to not just classify correctly, but classify correctly with the functional margin $>=1$.
+\
+
+~~~~'$xi_i >=0$' is loosening the constraint(we allow some points to have functional margin $<=1$), but we don't want $xi_i$ to be too large, so we add $xi_i$ in our minimizing  goal.
+\
+\
+
+~~~~Another reason we want to use $cal(l)_1$ norm norm soft margin SVM is that if we just have one outlier, we don't want it to change the previous fine decision boundary.\
+
+#figure(
+  image("images/Lec7_soft_SVM_boudary.jpg", width: 70%),
+  caption: [soft margin SVM boundary],
+)
+\
+\
+~~~~That way the SVM is more robust outliers.
+\
+\
+\
+
+3) Then we're gonna go through derivation (represent $w$ as a function of the $alpha$'s ......)
+\
+~~~~It turns out the problem then simplifies to the following:
+$
+  max sum_(i=1)^m alpha_i - sum_(i=1)^m sum_(j=1)^m y^((i)) y^((j)) alpha_i alpha_j <x^((i)), x^((j))>\
+  s.t. #h(1em) sum_(i=1)^m y^((i)) alpha_i = 0\
+  #h(3.5em)0<=alpha_i #text(fill: red)[$<=c$], #h(1em)i=1,dots,m
+$
+(*Dual form with the optimization problem*)\
+~~~~Compared with our previously derived dual form, here the soft margin SVM just has an additional condition that #text(fill: red)[$alpha_i <= c$]
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- 一些对于具有核函数方法的SVM的用途的举例：\
+
+$e.g.^1$ :\
+~~~~Protein sequence classifier:\
+
+~~~~蛋白质是氨基酸序列，如果将所有21种氨基酸各自编码，那么蛋白质就是一串编码序列。\
+
+~~~~这个时候我们应该思考，拿到一串编码序列作为输入后，如何将这个输入 $x$ 投影至 $Phi(x)$ ？我们应该构造怎样的特征空间？
+$
+  Phi(x) = ?
+$
+~~~~一种构造特征向量的方法是，列出所有4种氨基酸的组合：（假设氨基酸26种用$A~Z$来编码表示）
+
+#set math.mat(delim: "[")
+$
+  mat(A, A, A, A; A, A, A, B; A, A, A, C; dots.v, , , ; Z, Z, Z, Z)
+$
+~~~~然后，根据这些序列在氨基酸中出现的次数来构建 $Phi(x)$ （这里相当于是创新性构造出核函数）
+$
+  mat(A, A, A, A; A, A, A, B; A, A, A, C; dots.v, , , ; Z, Z, Z, Z)
+  ->
+  mat(#hide($mat(A, A, A, A; A, A, A, B; A, A, A, C; dots.v, , , ; Z, Z, Z, Z)$))
+  = Phi(x)
+$
+$
+  Phi(x) in RR^((21^4))
+$
+
+~~~~Therefore, SVM allows us to invent kernel functions to measure the similarity.\
+
+~~~~（这里可以回顾一下 kernel trick 的实质：如果我们手动去构建那个 $21^4$ 维的向量，然后计算这样两个向量 $x,z$ 之间的相似度（此处相似度就是求内积），那么计算量会多到爆炸！核函数其实也就是给我提供了一种不需要显式计算这种高维向量内积的捷径）\
+
+~~~~在上述例子中，如果我们先手动去构造输入 $x,z$ 的对应 $21^4$ 维向量，再作点积，那么计算量过大。但如果换一种思路，我们直接去计数 $x,z$ 里面的“相同4元序列”出现的次数，$x, z$相同序列出现次数再取对应乘积和，那么问题就得到简化。
+
+e.g:
+#let k(x) = math.text(fill: blue.darken(20%), $#x$)
+
+~~~~设字母表 $Sigma = {A, B, C, D}$，取 2-mer 片段（只考虑二元组合），特征空间维度 $D = 4^2 = 16$
+
+~~~~*输入序列*：
+- $X = {"ABABD"}$， $Y = {"ABACD"}$
+
+按字典序排列 16 维特征空间：
+$ mat(A A; A B; A C; dots.v; D C; D D) $
+
+(i) 法一：显式特征映射（笨办法）
+
+~~~~第一步：构建 16 维频次向量 $Phi(x)$
+$
+  Phi(X) = (0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)^T \
+  Phi(Y) = (0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0)^T
+$
+
+~~~~第二步：计算向量内积 $Phi(X)^T Phi(Y)$
+
+$ "点积结果" = 2 + 1 + 0 + 0 + 0 = bold(3) $
+
+\
+
+(2). 法二：使用核技巧
+
+无需显示构造 16 维向量，直接计算交集片段的频次乘积和：
+
+$
+  K(X, Y) & = sum_(m) "count"_X (m) times "count"_Y (m) \
+          & = (2 times 1)_(A B) + (1 times 1)_(B A) + (1 times 0)_(B D) + (0 times 1)_(A C) + (0 times 1)_(C D) \
+          & = 2 + 1 + 0 + 0 + 0 \
+          & = bold(3)
+$
+
+#block(
+  fill: rgb("eff6ff"),
+  stroke: 1pt + rgb("3b82f6"),
+  inset: 10pt,
+  radius: 4pt,
+  [
+    *结论*：
+    显式映射内积 $Phi(X)^T Phi(Y) = 3$ 与核函数 $K(X,Y) = 3$ 在数学上完全等价。核技巧将复杂度从高维特征空间 $O(|Sigma|^k)$ 降至仅与实际出现的片段数相关($O(n)$)。
+  ],
+)
 
 
 
