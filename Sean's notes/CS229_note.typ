@@ -128,7 +128,7 @@ $ h(x) = sum_(i=0)^n theta_i x_i = theta^T x $
 Goal: select $theta$ to output a hypothesis : function $h$
 \
 
-~~~To minimize cost function: $ J(theta) = 1/2 sum_(i=1)^m(h_theta(x^((i))) - y^((i)))^2 $
+~~~To minimize cost function: $ J(theta) = 1/2 sum_(i=1)^m (h_theta (x^((i))) - y^((i)))^2 $
 
 p.s: linear regression is a special case in the regression family, and squared error corrresponds to a Guassian !
 
@@ -2893,8 +2893,467 @@ $
 
 
 
+#pagebreak()
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec VIII]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Learning Algorithm Application
+\
+*Outline*:
+- Bias / Variance
+- Regularization
+- Train / Dev / Test splits
+- Model selection & Cross-validation
+\
+
+=== 1. Bias & Variance
+\
+~~~~Given a dataset, we'd want to fit the data "just right".
+\
+
+(underfit(high _bias_) $->$ just right $->$ overfit(high _variance_))
+
+~~~~high bias : the algorithm has very strong perconceptions that the data could be fit by the (linear) function
+\
+~~~~high variance : if we do the experiment again, we may end up with very different prediction
+
+\
+\
+
+=== 2. Regularization
+\
+1) linear regression:
+\
+
+~~~~Optimiation Goal:
+$
+  min_theta 1/2 sum_(i=1)^m ||y^((i))-theta^T x^((i))||^2 #text(fill: red)[$+lambda||theta||^2$]
+$
+
+~~~~Here we add the red part as   a *_regularization term_*.
+
+
+Use this dataset as a simple example:\
+#figure(
+  image("images/Lec8_regularization_dataset.jpg", width: 30%),
+  caption: [dataset],
+)
+
+
+~~~~① If we set $lambda = 0$, we are actually fitting a 5-degree polynomial curve, and that's overfitting:
+#figure(
+  image("images/Lec8_regularization_overfit.jpg", width: 50%),
+  caption: [overfit],
+)\
+~~~~② If we set $lambda$ too large, we are actually underfitting the curve (when $lambda$ grows too big , $h_theta (x) approx 0$)
+#figure(
+  image("images/Lec8_regularization_underfit.jpg", width: 50%),
+  caption: [underfit],
+)
+
+~~~~So with the penalty in the minimization goal, we'll end up preventing the parameters $theta$ from being too big. And that will probably give out $theta$ being "just right":
+
+#figure(
+  image("images/Lec8_regularization_just-right.jpg", width: 50%),
+  caption: ["just right"],
+)
+
+
+
 
 #pagebreak()
+
+
+
+
+
+2) In logistic regression, we have a cost function:
+$
+  arg max_theta sum_(i=1)^n log p(y^((i)) | x^((i)); theta) #text(fill: red)[$- lambda||theta||^2$]
+$
+
+~~~~Here this is a maximization goal, so we minus a regularization term.\
+~~~~An simple illustration is shown below:
+#figure(
+  image("images/Lec8_regularization_logistic.jpg", width: 50%),
+  caption: [logistic regression],
+)
+\
+
+*One _rule of thumb for logistic regression_*:\
+~~~~If we don't use regularization, it's fine when the number of examples is at least on the order of the number of parameters we want to fit.
+\
+\
+
+#rect[
+  Q : Why SVM doesn't overfit even when it works in an infinite-dim space ?
+  \
+
+  A : As SVM's optimization goal is :
+  $
+    min ||w||^2
+  $
+  ~~~~It turns out that this has a similar effect as $min lambda||theta||^2$, so by forcing the parameters to be small is difficult for SVM to overfit the data too much.]
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+3) Text Classification:\
+
+~~~~If we have just 100 training examples, but the feature vector $in RR^10000$, it will probably overfit the data.
+\
+~~~~If we use a logistic regression with regularization, it'll probably be a good algorithm.(but we need gradient descent to solve local value parameters)
+
+\
+\
+
+#rect[
+  Q : Why don't we regularize per parameters ?
+  $
+    lambda||theta||^2 #h(1em)"instead of" #h(1em)sum_j lambda_j (theta_j)^2 #h(1em) ?
+  $
+  A : Because if we regularize per parameters, we'll end up with the $lambda$'s. And we don't have good weights to choose those $lambda$.
+]
+\
+~~~~Note that we also pre-processing the features by scaling each dimension to the same interval (−1, +1) / (0, 1). (normalization)\
+~~~~And it turns out this pre-processing will make gradient descent faster.
+
+\
+\
+\
+\
+
+4) 上述正则化方法的数学由来以及 MAP
+
+~~~~Given a training set $S$ :
+$
+  S = {(x^((i)), y^((i)))}_(i=1)^m
+$
+
+we want to find the most likely value of $theta$
+$
+  P(theta | S) = (P(S | theta) P(theta)) / P(S)
+$
+
+~~~~So if we want to fit the most likely value of $theta$ given the training data, we're doing this optimization: (note that $P(S)$ is a constant)
+$
+  arg max_theta P(theta | S) = arg max_theta P(S | theta)P(theta)
+$
+~~~~根据概率论，整个数据集的似然 $P(S | theta)$ 可以写成所有样本的联合分布：
+
+$ P(S | theta) = P((x^((1)), y^((1))), dots, (x^((m)), y^((m))) | theta) $
+
+~~~~假设样本之间相互独立（i.i.d.），联合分布等于边缘分布的乘积：
+
+$ P(S | theta) = product_(i=1)^m P(x^((i)), y^((i)) | theta) $
+
+~~~~把这个式子再进一步用条件概率公式拆开
+$
+  P(S | theta) = product_(i=1)^m P(y^((i)) | x^((i)), theta) dot P(x^((i)) | theta)
+$
+
+~~~~由于逻辑回归（或者任何广义线性模型）是判别式模型，用来建模“在给定 $x$ 的情况下，$y$ 的条件概率”，即 $P(y | x, theta)$，它并不关心 $x$ 本身是怎么来的，所以输入数据 $x^((i))$ 的分布 $P(x^((i)) | theta)$ 是不依赖于模型参数 $theta$ 的。
+
+~~~~因此，
+$
+  p(x^((i)) | theta) = p(x^((i)))
+$
+这些都是常数，所以最后得：
+
+$ P(S | theta) prop product_(i=1)^m P(y^((i)) | x^((i)), theta) $
+
+
+
+~~~~所以我们最后要优化的式子就简化为：
+$
+  arg max_theta product_(i=1)^m P(y^((i)) | x^((i)), theta) P(theta)
+$
+
+\
+
+~~~~#underline[如果假设 $theta$ 满足多元高斯分布（$theta in RR^n$)]
+$
+  "assume": theta tilde cal(N)(0, tau^2 I)
+$
+（注意上式协方差矩阵表明各个维度独立但是方差相等）写出概率密度函数，也即：
+$
+  P(theta) & = 1 / ((2 pi)^(n/2)|tau^2 I|^(1/2)) exp(- 1/2 #h(0.3em)theta^T (tau^2 I)^(-1) theta) \
+           & = 1 / ((2 pi)^(n/2)|tau^2 I|^(1/2)) exp(- 1/(2tau^2) #h(0.3em)theta^T theta)
+$
+\
+
+~~~~So this is the prior distribution for $theta$, and if we plug this prob distribution into the ultimate optimization goal, and take log to maximize it, then we have:
+$
+  arg max_theta log(product_(i=1)^m P(y^((i)) | x^((i)), theta) P(theta))\
+  = arg max_theta [sum_(i=1)^m log(P(y^((i)) | x^((i)), theta)) + log(P(theta))]
+$
+上式记作 $ell(theta)$
+\
+
+~~~~代入之前我们假设而得到的：
+$
+  log(P(theta)) & = log[1 / ((2 pi)^(n/2)|tau^2 I|^(1/2)) exp(- 1/(2tau^2) #h(0.3em)theta^T theta)] \
+                & prop - 1/(2 tau^2) theta^T theta
+$
+
+~~~~所以我们最终的优化目标就是：
+$
+  arg max_theta [#text(fill: red)[$sum_(i=1)^m log(P(y^((i)) | x^((i)), theta))$] #text(fill: blue)[$- 1/(2tau^2) ||theta||^2$]]
+$
+\
+
+~~~~注意前面红色这一块
+$
+  arg max_theta [sum_(i=1)^m log(P(y^((i)) | x^((i)), theta))]
+$
+其实就是判别式模型（包括所有广义线性模型（如：线性回归、逻辑回归...））在做的最大似然估计（MLE），也就是我们之前没有正则化的时候的最后的最大化目标函数；
+\
+
+~~~~而我们加上了后面这一块：
+$
+  arg max_theta (- 1/ (2tau^2) ||theta||^2)
+$
+这正是我们之前对于linear regression, logistic regression 采用的正则化方法！
+\
+\
+\
+
+~~~~所以小结一下：上面我们通过加减 $lambda ||theta||^2$ 来正则化的方法的数学由来其实就是我们引入的这个关于参数 $theta$ 的多元高斯分布假设：
+$
+  "assume": theta tilde cal(N)(0, tau^2 I)
+$
+~~~~以上方法称为 MAP （最大后验估计），也就是在尽量拟合数据的同时，还要让参数 $theta$ 符合我们预设的规律（由于 $theta$ 满足高斯分布所以不会太大）；而我们之前一直采用的 MLE（最大似然估计）则是认为参数 $theta$ 是一个未知但固定的值，只让模型在训练集上进行充分拟合。
+\
+\
+
+#rect[
+  MLE、 MAP 两种方法其实涉及统计学两大学派之间的区别：\
+
+  ① _*Frequentist*_:\
+  ~~~~认为存在一个真实的 $theta$ 使得我们当前这个数据最可能，我们要去估计这个值，所以使用 MLE
+  #text(fill: red)[$
+    P(S | theta) ->M L E
+  $]
+  \
+  ② _*Bayesian*_:\
+  ~~~~认为 $theta$ 是未知的，但在看到任何数据之前，我们已经对数据集生成机制有先验信念，而这些先验信念被编码在概率分布中
+  $
+    P(theta)-> "prior distribution"
+  $
+
+  ~~~~在上述例子中，我们使用的是 Guassian prior，这其实挺合理，首先世界上大多数事物都是高斯分布的，而且在我们不知道 $theta$ 的情况下，我们把它的均值设为 0 也是正常的
+  #text(fill: red)[$
+    max_theta P(theta | S) -> "MAP maximum"
+  $]
+
+]
+
+\
+\
+\
+\
+\
+\
+\
+\
+
+=== 3. Train / Dev / Test  splits
+\
+~~~~Generally, we can draw the error curve below.
+
+#figure(
+  image("images/Lec8_error-curve.jpg", width: 75%),
+  caption: [error curve],
+)
+
+
+
+~~~~Now we're gonna introduce an mechanic algorithm to find the balanced point where both training error and generalization error are small enough.
+\
+\
+\
+
+~~~~Given a dataset, we basically splits it into several subsets : train, dev, test sets.
+$
+  S -> S_("train") , S_("dev") , S_("test")
+$
+\
+
+- *The Whole Procedure*
+① Train a sequence of models (options for the degreee of polynomial) on *$S_("train")$*, and get some hypothesis $h_i$
+\
+
+② Measure error on *$S_("dev")$*, and pick the one with lowest error on *$S_("dev")$*
+\
+
+③ Evaluate the algorithm on a separate test set $S_("test")$ and report that error. (to publishing an unbiased test result)\
+~~~~We shouldn't use the test set to make any decision, because that won't be an unbaised report ! This can only be used for reporting or tracking performance.
+
+
+
+#pagebreak()
+
+
+
+
+- *Dataset Splits*
+
+- - Historical rule of thumb
+$
+  S->cases("Train":70%, "Test"#h(0.8em):30%)
+$
+or
+$
+  S->cases("Train":60%, "Dev"#h(1em):20%, "Test"#h(0.8em):20%)
+$
+~~~~This rule applies to cases when we _don't have a massive dataset_.
+
+\
+\
+- - *_Massive_* dataset
+
+~~~~When we have a massive dataset, the percentage of data we send to dev and test are shrinking !
+\
+
+~~~~If we're just measuring the small differences between algorithm a and b, we need large Dev and Test datasets.\
+~~~~But if we're just comparing different algorithms, than we don't need large Dev and Test datasets to distinguish the differences.
+\
+\
+#rect[
+  Note that what we do to Train and Dev datasets is called *_hold-out cross validation_*.
+
+  "development set" = "cross validation set"
+]
+\
+\
+
+- - *Small datasets*
+
+~~~~If we have a small dataset to be split for Train and Dev sets, but we don't want to waste any data to not being trained for our model.\
+
+~~~~Here is an alogirthm used for this case:\
+
+~~~~*K-fold cross-validation (k-fold CV)*
+
+e.g:
+$
+  S = {(x^((i)), y^((i)))}_(i=1)^100
+$
+~~~~We use $k = 5$ for illustration ($k=10$ is typical). \
+~~~~So we divide our dataset into 5 different subsets (in this example each subset will have 20 examples).
+\
+\
+
+*Algorithm* :\
+#rect[
+  For $i=1, dots, k$ : {\
+  ~~~~Train: $i.e$ fit parameters on $k-1$ pieces;\
+  ~~~~~~~~~~~~~~~~~~then test on the remaining one piece\
+  }\
+  Average (errors from these $k$ classifiers)
+]
+
+~~~~The if we try to find the degree of the polynomial, we just wrap the existing procedure with an outer loop :
+$
+  "For" d = 1, dots, s #h(0.5em) ("degree of polynomial")
+$
+
+~~~~So for each attempted degree, we repeat the whole procedure above. Then we compared the average errors from each degree of polynomial and find the best degree for the polynomial.
+\
+\
+#rect[
+  *An optional final step* (after we've decided which degree to use):\
+  ~~~~Refit the model on all 100% of the data
+]
+\
+
+~~~~Compared to simple cross-validation, it makes more efficient use of data because we're holding out only 10% of the data on each iteration. But the disadvantage is that this is computionally very expensive. So it's applicable to small dataset.
+\
+\
+\
+\
+
+~~~~There is an extreme version of $k$-fold CV : *Leave-one-out cross-validation*
+\
+
+~~~~Which basically means that we're holding out just one example each time for test. (only appilcable to very small dataset (maybe $m<=100$ (the number of examples)))
+
+\
+
+#rect[
+  Q : In k-fold CV's average procedure, do we estimate the variance of those k estimates?\
+  A : Actually we'd think these $k$ estimates are highly correlated because they always have $(k-2) / (k-1)$ of same training data.
+]
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+
+=== 4. Feature Selection
+\
+Algorithm: *Forward Search*
+#rect[
+  Start with $cal(F) = emptyset$ (an empty set of features)\
+  ~~~~Repeat: {\
+  ~~~~~~~~1) Try adding each feature $i$ to $cal(F)$, and see ~~~~~~~~~~~~which single feature most improves the ~~~~~~~~~~~~dev set performance.\
+  ~~~~~~~~2) Add that feature to $cal(F)$\
+  ~~~~}
+]
+
+~~~~That's basically keeping adding features greedily until when more features now hurts performance.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
