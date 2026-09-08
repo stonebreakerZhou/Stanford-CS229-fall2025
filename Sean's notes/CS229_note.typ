@@ -3334,12 +3334,6 @@ Algorithm: *Forward Search*
 
 
 
-
-
-
-
-
-
 #pagebreak()
 
 
@@ -3347,6 +3341,395 @@ Algorithm: *Forward Search*
 
 
 
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec IX]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Learning Theory
+\
+outline:
+- Setup / Assumptions
+- Bias / Variance
+- Approx / Estimate
+- Empirical Risk Minimizer
+- Uniform convergence
+- VC dimension
+
+\
+
+=== 1. Assumptions
+\
+1) *There exists a data distribution $D$ that:
+$ (x, y) tilde D $*
+~~~~This assumption must hold in both supervised learning and unsupervised learning.\
+~~~~And that means data in the traning and test set should all come from the same distribution $D$.
+\
+\
+
+2) *All the examples are sampled _independently_*.
+
+~~~~When we take a closer look, when those samples(random variable) go through a deterministic function, that will get a random variable $theta^*$ ($h^*$) as well.
+\
+#figure(
+  image("images/Lec9_learning_algo_procedure.jpg", width: 100%),
+  caption: [learning procedure],
+)
+~~~~But in this process, we believe that there exists a *_"true parameter"_ $theta^*$ (or $h^*$)*. Note that here $theta^*$ (or $h^*$) is not a random variable, it's just an unknown constant.
+
+
+
+
+=== 2. Bias & Variance
+
+~~~~In linear regression, we have this data view:
+#figure(
+  image("images/Lec9_data_view.jpg", width: 100%),
+  caption: [data view],
+)
+\
+~~~~Now we take a parameter view:
+#figure(
+  image("images/Lec9_parameter_view.jpg", width: 85%),
+  caption: [parameter view],
+)
+
+~~~~Here we select four learning algorithms A,B,C,D. Each time the data is fed into an algorithm, and we obtain an estimate output $hat(h)$ ($hat(theta)$) by that algorithm. Finally, we get multiple estimates of $hat(h)$ ($hat(theta)$) from each of the four algorithms. (blue points in the figure above) And we pin the true parameter as the red point.
+\
+
+~~~~So the blue points are basically the samples from the distribution of $hat(h)$ ($hat(theta)$), and the number of blue points is the time that we do the sampling.
+\
+\
+\
+\
+
+~~~~And here it's easy to see the concept of bias&variance:\
+① Bias : whether the sampling distribution is centered around the true parameter\
+② Variance : the dispersity of the sampling distribution
+
+\
+~~~~In fact, Bias and Variance is the properties of 1st and 2nd moments of the sampling distribution.
+\
+
+~~~~As we increase the size of data, the variance of $hat(theta)$ would become small.
+$
+  m -> infinity, #h(1em) "Var"[hat(theta)] -> 0
+$
+~~~~The rate at which the variance tends to zero as $m->infinity$ is called the statistical efficiency, and it measures the ability to extract information from the data.
+
+\
+\
+\
+\
+
+- *Consistent Algorithm*:
+$
+  "as" m-> infinity, #h(1em) hat(theta) -> theta^*
+$
+which means :
+$
+  E[hat(theta)] = theta^* , #h(1em) "for all" m
+$
+
+\
+\
+~~~~For high-biased algorithms, no matter how much data we feed into the algorithm, the distribution of $hat(h)$ would never center around $theta^*$ . \
+~~~~For high-variance algorithms, they are highly easily distracted by the noise from the data.\
+\
+
+~~~~As we can see, bias and variance are independent to each other. And bias and variance are properties of an algorithm given the fixed number of $m$ .
+
+
+
+
+
+
+=== 3. Approx / Estimate
+
+#figure(
+  image("images/Lec9_hypothesis_space.jpg", width: 60%),
+  caption: [hypothesis space],
+)
+
+#figure(
+  image("images/Lec9_error_risk_plot.jpg", width: 80%),
+  caption: [error plot],
+)
+
+
+*$g$* —— Best possible hypothesis\
+*$cal(H)$* —— a class of hypothesis (e.g hypo of logistic regression)\
+*$h^*$* —— best hypothesis in class $cal(H)$ (learned from infinite data)\
+*$hat(h)$* —— the hypothesis learned from current finite data\
+*$epsilon(h)$* —— risk / generalization error  (an infinite process to measure  model $h$'s error rate because D could be sampled infinitely)
+$
+  epsilon(h) = E_((x,y) tilde D) [1{h(x) != y}]
+$
+*$hat(epsilon)_S (h)$* —— empirical risk   (a finite process, model $h$'s error on current data sample of size $m$)
+$
+  hat(epsilon)_S (h) = 1/m sum_(i=1)^m 1{h(x^((i)) != y^((i)))}
+$
+
+*$epsilon(g)$* —— Bayes error / *_Inreducible error_*: if we take the best possible hypothesis, the rate that we make errors
+
+*$epsilon(h^*) - epsilon(g)$* —— *_Approximation error_* : the price we have to pay for limiting ourselves in a certain class $cal(H)$
+
+*$epsilon(hat(h)) - epsilon(h^*)$* —— *_Estimation error_*
+
+
+
+
+~~~~Thus, we have
+*$ epsilon(hat(h)) = "Estimation error" & + "Approximation error" \
+                                     & + "Inreducible error" $*
+
+\
+~~~~Let's try to understand this equation: \
+First, there's Bayes error that we cannot reduce by infinite data or algorithm; \
+Second, we'll choose our frame of learning algorithm(the class of all possible models) and that'll give approximation error; \
+Finally, we only have finite data, which leads to Estimation error.
+\
+
+~~~~Then we break up this equation further:
+$
+  epsilon(hat(h)) & = "Estimation error"
+                    + "Approximation error" \
+                  & + "Inreducible error" \
+                  & = ("Estimation Variance" + "Estimation Bias") \
+                  & + "Approximation error" + "Inreducible error" \
+                  & = "Variance" + "Bias" + "Inreducible error"
+$
+
+~~~~Bias basically captures why is $hat(h)$ far away from $g$.
+\
+\
+
+~~~~Note : What's $epsilon(hat(h))$ ?\
+~~~~$hat(h)$ is the hypothesis we've learned from the current finite data, so $epsilon(hat(h))$ is $hat(h)$'s error rate on D.(generalization error of $hat(h)$)
+
+\
+
+
+
+
+#rect[
+  - *Fight High Variance*
+
+  1) *Increase $m$*
+  \
+  2) *Regularization* \
+  (It can reduce variance, however, it may lead to the increase of bias)
+  \
+  \
+
+  - *Fight High Bias*
+
+  1) *Make $cal(H)$ bigger*. \
+  (Regularization actually shrinks $cal(H)$, which commonly pays the price of bias to reduce variance. Bigger $cal(H)$ could actually make variance bigger)
+
+]
+
+
+
+
+
+=== 4. *Empirical Risk Minimizer (ERM)*
+\
+#figure(
+  image("images/Lec9_ERM.jpg", width: 100%),
+  caption: [ERM],
+)
+~~~~In ERM, we take the naive method to minimize the empirical risk of our learned hypothesis $hat(h)$, which is, reduce error on the current finite training set, $i.e$, *$min epsilon(hat(h))$* to derive $hat(h)$ from $cal(H)$.
+$
+  hat(h)_("ERM") = arg min_(h in cal(H)) 1/m sum_(i=1)^m 1{h(x^((i))) != y^((i))}
+$
+
+~~~~If we limit ourselves to using ERM, we could come up with many other results.
+\
+\
+\
+\
+
+=== 5. *Uniform Convergence*
+\
+1) _*Two central questions*_ :\
+
+~~~~*①* In ERM, we try to minimize the training loss (error on the finite dataset), then what effect does it have on the generalization error ?
+\
+~~~~Basically, what's the relationship between *$epsilon(hat(h))$ and $epsilon(h)$* ?
+
+
+~~~~② Compare *$epsilon(hat(h))$ with $epsilon(h^*)$* ?
+\
+\
+
+2) _*Tools*_:\
+
+~~~~① *Union bound* :\
+~~~~If we have $k$ different events: $A_1, dots, A_k$ (they need not be independent), then:
+$
+  P(A_1 U A_2 U dots A_k) <= P(A_1) + dots + P(A_k)
+$
+
+~~~~② *Hoeffding's inequality*:\
+~~~~Let $Z_1, Z_2, dots, Z_m tilde "Bernoulli"(phi)$,
+$
+  hat(phi) = 1/m sum_(i=1)^m Z_i
+$
+~~~~Let $gamma > 0$ (margin), then:
+$
+  P(|hat(phi) - phi| > gamma) <= 2 exp(-2 gamma^2 m)
+$
+
+
+
+
+#figure(
+  image("images/Lec9_epsilon(hat(h))_with_epsilon(h).jpg", width: 90%),
+  caption: [$epsilon(hat(h)), epsilon(h)$],
+)
+\
+~~~~*3)* *question 1: $epsilon(hat(h))$ with $epsilon(h)$*\
+
+~~~~Let's start with some hypothesis $h_i$, then we get $epsilon(h_i), hat(epsilon)(h_i)$ from the curve plot. 由于：
+$
+  E[hat(epsilon)(h_i))] = epsilon(h_i)
+$
+where the expectation regards to the data sample.
+\
+由于
+$
+  Z_j = 1{h_i (x^((j))) != y^((j))}
+$
+是一个伯努利变量，并且
+$
+  phi = E_(x^((j)), y^((j)) in D)[1{h_i (x^((j))) != y^((j))}] = epsilon(h_i)
+$
+so we apply the Hoeffding's inequality, then we have:
+$
+  P(|1/m sum_(j=1)^m Z_j - epsilon(h_i)| > gamma) & <= 2 exp(-2 gamma^2 m) \
+   P(|hat(epsilon)(h_i)) - epsilon(h_i)| > gamma) & <= 2 exp(-2 gamma^2 m)
+$
+~~~~So this expression means that if we increase the size $m$, then $hat(epsilon)(h_i)$ will be more centered around $epsilon(h_i)$. （在这里我们推出：对于一个给定的 $h_i$，它的generalization error 与 empirical error 确实是紧密接近的，所以我们用 ERM 最小化 empirical error 确实可以最小化generalization error）
+\
+
+~~~~However, this method has some logical flaw because we start with some hypothesis $h_i$ and take the average of all the possible data that we could sample in the above. But pratically, we actually start with some data, and run the ERM to find the best $h$ for that particular data. That means $h$ and the data we have are not really independent. （实际情况与上述我们推导的逻辑相反，我们在学习时不是先固定模型（也就是假设）再去数据上拟合，而是从抽样的数据出发训练得到在这个数据上表现最好的模型）
+\
+\
+\
+~~~~To fix this logical flaw, we're gonna extend this result to all $h$. And this is basically called *_uniform convergence_* as we'll see generally how the risk curve converges uniformly to the generalization risk curve. （不能只证明 “对于一个固定的 $h$ 它的 generalization error 与 empirical risk 接近” ，而是要推广证明：$cal(H)$ 里面所有的假设 $h$，它们的generalization error 与 empirical risk 都同时很接近！这就是一致收敛！）
+
+\
+\
+
+*case *1)* : _Finite_ hypothesis classes*\
+
+~~~~Assume: class $cal(H)$ has a finite number of classes:
+$
+  |cal(H)| = k
+$
+then we get:
+$
+  P(exists h in cal(H) #h(0.5em) s.t. |hat(epsilon)_S (h) - epsilon(h)| > gamma) <= k dot 2 exp(-2 gamma^2 m)
+$
+then we flip it over: (所有 $k$ 个 $h$ 都为稳定接近的概率)
+
+$
+  P(forall h in cal(H) #h(0.5em) s.t. |hat(epsilon)_S (h) - epsilon(h)| <= gamma) > 1 - k dot 2 exp(-2 gamma^2 m)
+$
+
+~~~~Let $delta = k dot 2 exp(-2 gamma^2 m)$ \
+
+*$delta$* —— prob of error(the difference is bigger than some margin $gamma$)\
+*$gamma$* —— margin of error\
+*$m$* —— sample size
+
+
+~~~~For the three variables above, we can actually fix the two of them and solve for the third.
+\
+
+
+$e.g^1$ : fix $delta, gamma > 0$\
+then:
+$
+  m >= 1 / (2 gamma^2) log((2k) / delta)
+$
+~~~~This is called _sample complexity_.
+
+\
+\
+\
+\
+
+
+
+
+*4) question 2 : $epsilon(hat(h))$ with $epsilon(h^*)$*
+
+#figure(
+  image("images/Lec9_epsilon(hat(h))_with_epsilon(h^star).jpg", width: 100%),
+  caption: [$epsilon(hat(h)) , epsilon(h^*)$],
+)
+
+~~~~First, applying the Hoeffding's inequality:
+$
+  epsilon(hat(h)) & <= hat(epsilon) (hat(h)) + gamma
+$
+
+~~~~Then, as $hat(epsilon)(hat(h)) < hat(epsilon)(h^*)$ , we have :
+$
+  epsilon(hat(h)) & <= hat(epsilon) (hat(h)) + gamma \
+                  & <= hat(epsilon)(h^*) + gamma
+$
+~~~~Because we've proved *_uniform convergence_* before, the gap between $hat(epsilon)$ and $epsilon$ is bounded by $gamma$ *_for any $h$_* . Therefore, $hat(epsilon)(h^*) <= epsilon(h^*) + gamma$ . Then we substitute into the inequality above:
+$
+  epsilon(hat(h)) <= epsilon(h^*) + 2gamma
+$
+
+~~~~That means: with a prob of $1-delta$ and a training size $m$, the difference between $epsilon(hat(h))$ and $epsilon(h^*)$ will be no more than $2gamma$, $i.e$ :
+$
+  epsilon(hat(h)) <= epsilon(h^*) + 2sqrt(1/ (2m) log((2k) / delta))
+$
+
+
+
+*case 2) : For infinite classes*, that's basically an extension of this.
+
+\
+\
+\
+\
+\
+
+
+=== 6. VC dimension
+\
+~~~~现实中的模型（如线性回归、神经网络），权重 $theta$ 可以取任意实数，假设空间 $cal(H)$ 是无限大的，此时 $k = infinity$，但是代入上述表达式毫无意义\
+~~~~统计学家发现，虽然参数可以取无限个实数，但模型的“有效表达能力”是有限的。这个有效大小就叫 $V C "dimension"$ \
+~~~~对于无限假设类，只需把公式里的 $k$ 替换成 $V C$​，就能得到一个新的、不发散的上界：
+
+~~~~Assign a size to a infinite hypothesis class.
+$
+  V C(cal(H)) #h(0.5em) ("finite")
+$
+~~~~And for infinite hypothesis class, we can end up with a bound:
+$
+  epsilon(hat(h)) <= epsilon(h^*) + O(sqrt(((V C(cal(H))) / m) log(m / ((V C (cal(H))))) + 1/m log(1 /delta))
+$
+
+
+
+
+
+
+
+#pagebreak()
 
 
 
