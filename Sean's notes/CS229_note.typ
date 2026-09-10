@@ -3729,7 +3729,629 @@ $
 
 
 
+
+
 #pagebreak()
+
+
+
+
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec X]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Decision Tree & Emsemble methods
+\
+outline:
+- Decision tree
+- (general) emsemble methods
+- Bagging
+- Random forests
+- Boosting
+
+
+\
+
+=== 1. Decision Tree
+
+~~~~Previous lectures have coverd linear models, and now we'll go into our first non-linear model —— decision tree.
+
+
+~~~~If we have a dataset like below, it's hard to find a linear decision boundary:
+
+#figure(
+  image("images/Lec10_DT_dataset_1.jpg", width: 70%),
+  caption: [dataset 1],
+)
+
+
+~~~~~What decision tree does is *greedy, top-down(from root to leaf), recursive partitioning of the dataset space.*
+\
+~~~~For the dataset above, decision tree might decide like this:
+
+#figure(
+  image("images/Lec10_DT_eg1.jpg", width: 40%),
+  caption: [dataset 1 decision process],
+)
+
+
+~~~~Then the dataset can have splits :
+#figure(
+  image("images/Lec10_DT_dataset_1_split.jpg", width: 70%),
+  caption: [dataset 1 split],
+)
+\
+~~~~If we have a parent region $R_p$ , and we're looking for a split function $S_p$ :
+$
+  S_p (j, t)
+$
+where $j$ is the feature number and $t$ is the threshold being used.
+$
+  S_p (j, t) = ({X|X_j < t, X in R_p}, {X|X_j>t, X in R_p})
+$
+~~~~The output of this split function is a tuple that contains two subregions and we called $R_1, R_2$
+
+\
+\
+\
+\
+
+
+- *How to choose splits ?*
+\
+① Define loss on a region R : $L(R)$\
+
+~~~~Given $C$ classes total, define $hat(P)_c$ to be the proportion of examples in $R$ that are of class $c$.
+\
+
+~~~~Then we can define loss as 'misclassification':
+$
+  L_("misclass") = 1 - max_c hat(P)_c
+$
+(because we choose a greedy split each time. （也就是少数服从多数的原则，叶节点区域最后的分类就是里面最多数节点所属的类别）)
+
+
+
+
+
+
+② Therefore we want to choose a split that maximize this loss difference :
+$
+  max_(j, t) L(R_p) - ((|R_1|) / (|R_p|) L(R_1) + (|R_2|) / (|R_p|) L(R_2))
+$
+~~~~$L(R_p)$ is the parent loss, and the latter term is children loss (weighted sum). Since parent loss matters nothing here because it's already defined, so basically we're trying to
+$
+  max_(j, t) -((|R_1|) / (|R_p|) L(R_1) + (|R_2|) / (|R_p|) L(R_2))
+$
+
+\
+\
+\
+\
+\
+\
+\
+
+
+- *Misclassification loss has issues*
+
+~~~~Let's introduce a simple example to discuss why misclassification is not suitable for this case:
+
+~~~~Assume we have this dataset of 900 positive examples + 100 negative examples
+
+#figure(
+  image("images/Lec10_misclassification_simple-eg1_dataset.jpg", width: 40%),
+  caption: [dataset 2],
+)
+
+~~~~After the first split, as misclassifcation loss forces to classify the 900 right, and to classify the other 100 wrong. Assume the first split leads to this:
+（手绘图2）
+#figure(
+  image("images/Lec10_misclassification_simple-eg1_split1.jpg", width: 65%),
+  caption: [dataset 2 split ①],
+)
+
+
+~~~~Let's compare it to another split:
+#figure(
+  image("images/Lec10_misclassification_simple-eg1_split2.jpg", width: 65%),
+  caption: [dataset 2 split ②],
+)
+
+~~~~Split ② is better than split ① because we intuitively split more positive examples out.\
+~~~~However, if we only look at misclassification loss, these two are the same :
+$
+          (|R_1|) / (|R_p|) L(R_1) + (|R_2|) / (|R_p|) L(R_2) & = 800 / 1000 times 100/ 800 + 0 = 0.1 \
+  (|R_1 '|) / (|R_p|) L(R_1 ') + (|R_2 '|) / (|R_p|) L(R_2 ') & = 500 / 1000 times 100 / 500 = 0.1
+$
+
+which shows that we can't diffrentiate the performance by just comparing their misclassification loss.
+
+\
+\
+\
+\
+
+- *Instead, we can define this cross-entropy loss:*
+$
+  L_("cross") = - sum_c hat(P)_c log_2 hat(P)_c
+$
+(concept borrowed from the information theory: the number of bits we need to tell an example what class it belongs to)
+\
+\
+
+~~~~For cross-entropy loss, we can draw this strictly-concave curve:
+
+#figure(
+  image("images/Lec10_CE-loss_curve1.jpg", width: 60%),
+  caption: [cross-entropy loss curve1],
+)
+
+~~~~Assume we have two children regions $R_1, R_2$ on the curve :
+
+#figure(
+  image("images/Lec10_CE-loss_curve2.jpg", width: 60%),
+  caption: [cross-entropy loss curve2],
+)
+
+~~~~*_If the number of examples in $R_1, R_2$ is the same_*, then the change in loss equals to :
+
+$
+  max_(j, t) L(R_p) - (L(R_1)+L(R_2))/2
+$
+
+~~~~We take the midpoint of $R_1, R_2$ on the curve
+plot:
+
+#figure(
+  image("images/Lec10_CE-loss_curve3.jpg", width: 60%),
+  caption: [cross-entropy loss curve midpoint],
+)
+
+
+~~~~And since *_there's the same number of example in $R_1, R_2$_*, we have :
+$
+  hat(P)_c (R_p) = (hat(P)_c (R_1) + hat(P)_c (R_2)) / 2
+$
+\
+
+~~~~Note : We can verify this property through the simple split example above :
+
+#figure(
+  image("images/Lec10_CE-loss_curve_midpoint_eg.jpg", width: 65%),
+  caption: [cross-entropy loss midpoint verfication],
+)
+
+
+
+
+~~~~Therefore, we can easily find the change in loss on the curve :
+
+#figure(
+  image("images/Lec10_loss-change_on_CE-loss_curve.jpg", width: 65%),
+  caption: [loss change on cross-entropy loss curve],
+)
+
+
+
+~~~~Just because the loss function is strictly concave, so whether or not the number of examples in $R_1, R_2$ is evenly divided, we always have
+$
+  L(R_p) - (L(R_1) + L(R_2)) / 2 > 0
+$
+~~~~That's how we get a reduction in loss.
+\
+\
+
+
+- - Now we can recall the *loss function of misclassification* :
+
+#figure(
+  image("images/Lec10_misclassification-loss_curve.jpg", width: 50%),
+  caption: [misclassification loss curve],
+)
+
+~~~~In this case we can't get any reduction in loss !
+
+- - Furthurmore, we could use *Gini loss* :
+
+$
+  L_("Gini") = sum_c hat(p)_c (1- hat(p)_c)
+$
+
+#figure(
+  image("images/Lec10_Gini-loss_curve.jpg", width: 60%),
+  caption: [misclassification loss curve],
+)
+
+~~~~This is also strictly convex curve like the cross-entropy loss, so similarly we are guaranteed to obtain a loss reduction.
+
+\
+\
+\
+\
+\
+\
+
+- *Decision Tree for Regression : Regerssion Tree*
+\
+~~~~In the former decision tree, we adopt the "majority vote" method that classify the leave region to the class the same as the major class in this region.\
+
+~~~~Now assume we have a dataset like this, and we do the splits as well:
+
+#figure(
+  image("images/Lec10_regression-tree_dataset.jpg", width: 70%),
+  caption: [regression tree dataset split],
+)
+\
+
+~~~~In regression task, we have to predict continuous values. So what we do when we get to one of our leaves(the smallest subregion) is that instead of just predicting a mojority class, *_we predict the mean of the values left_*.
+\
+
+~~~~For region $R_m$, we predict the average mean value :
+$
+  hat(y)_m = (sum_(i in R_m) y_i) / (|R_m|)
+$
+\
+~~~~Then the loss function we use is:
+$
+  L_("squared") = (sum_(i in R_m) (y_i - hat(y)_m)^2) / (|R_m|)
+$
+(Actually, under squared error loss, the optimal constant prediction is the mean value.)
+\
+\
+\
+\
+\
+
+- *Decision Tree for Categorical variables*
+
+~~~~Regression tree can also work for catefory variables. It'll attempt to split the category set into 2 subsets. So if there are *$Q$* categories, there are *$(2^(Q-1) - 1)$* possible splits.
+\
+
+~~~~在实践中，对于分类任务（使用基尼或交叉熵），可以证明：最优的二分方式一定可以通过按正例比例（或者回归任务中的均值大小）排序后，在相邻位置之间切分得到。这样的话，我们只需要先排序，在进行一遍线性搜索便可以找到最佳的二分法。\
+
+
+
+\
+\
+\
+\
+- *Regularization*
+
+~~~~If we allow our decision tree to grow without ever stopping, it'd end up assigning each data point a subregion, which leads to overfitting.
+\
+~~~~Due to its overfitting, we can see that decision tree is a sort of high-variance models because it's sensitive to noise in data. Now we should regularize these high-variance DTs.
+\
+\
+
+
+_*heuristic methods*_:\
+
+① Stop splitting a certain leaf when its size hits a threshold. (have a minimum leaf size)
+\
+② Enforce a maximum depth of the tree.
+\
+③ Enforce a maximum number of nodes.
+\
+④ Enforce a minimum decrease in loss, abandon not obvious splits. (usually not good)
+\
+⑤ Let the decision tree grow fully first, then do *post-pruning*.\
+~~~~(In some cases, we find that _a combination of several 'quesions'_ can greatly improve the decision tree(not just a single question, questions may correlate), so enforcing a growing size could be risky in this sense. So we first let the tree grow fully, then in pruning, we take a validation set and evaluate the misclassification rate on the validation set for each leaf we might remove.)\
+~~~~*Post-pruning* : 自底向上考虑剪枝：对于每一个内部节点，考虑是否把它下面的整个子树剪掉，变成一个叶节点。\
+~~~~用验证集评估：对于每个候选的剪枝节点，计算剪枝后在验证集上的误分类率（或损失）。如果剪枝后验证误差不升反降，就剪掉
+\
+\
+\
+\
+\
+\
+
+- *Runtime*
+
+~~~~Assume : $n$ examples, $f$ features, $d$ depth
+\
+
+~~~~At test time, run time is $O(d)$ (这与树的深度相等，因为我们在树的每一层只会判断一次), and basically, we have $d < log_2 n$ （最优情况下如果决策树在每一层左右分支的数据量都差不多的话，那么决策树会是一棵平衡二叉树，此时深度最小）
+
+#figure(
+  image("images/Lec10_DT_depth.jpg", width: 80%),
+  caption: [decision tree depth (balanced vs. imbalanced)],
+)
+
+
+~~~~At train time, each point is part of $O(d)$ nodes.（在训练构建树的过程中，每一个样本都会从根节点一路被划分到某个叶子节点，所以每一层会出现一次，即 $d$ 次） And cost of point at each node is proportional to the features —— $O(f)$.（决策树在每一层决定“当前节点到底用哪个特征来切分”时，需要遍历所有特征（共 $f$ 个）） So the total cost is $O(n f d)$. Note that we have the data matrix $in R^(n times f)$, so the cost of train time is quite low.
+
+
+\
+\
+\
+\
+\
+
+- *Downsides of Decision Trees*
+
+① No additive structure : \
+~~~~Assume we have a dataset like this (a binary classification task):
+
+#figure(
+  image("images/Lec10_DT_dataset3.jpg", width: 65%),
+  caption: [dataset 3],
+)
+
+~~~~If we use linear or logistic regression, they can easily give decision boundary like the black dashed line. However, using decision tree, it'd end up with those complex blue lines for splits and that's just rough approximation.\
+
+#figure(
+  image("images/Lec10_DT_no-additive.jpg", width: 65%),
+  caption: [no additive],
+)
+~~~~So we intuitively understand that the decision tree is hard to handle cases where the features are interacting additively with each other.
+（事实上就是因为决策树的每一次分裂决策边界只能平行于坐标轴，而无法直接画出一条斜线，所以不能像线性回归一样画出斜线 $theta^T x$
+
+
+
+
+
+
+
+- *Recap of decision tree*
+
+~~~~*Upsides*:\
+① Easy to explain\
+② Interpretable（不是黑箱）\
+③ Able to deal with categorical variables（不需要对分类变量做独热编码就能直接处理）\
+④ Fast
+
+~~~~*Downsides*:\
+① High variance（对数据噪声敏感，且容易过拟合）\
+② Bad at additive cases\
+③ Because of the first two downsides, they generally have fairly low predictive accuracy.
+
+\
+
+~~~~_However, we can improve decision trees a lot through emsembling._
+
+
+\
+\
+\
+\
+\
+\
+
+
+=== 2. Emsembling
+\
+
+1 ) 先来看核心要用得到的数学知识：\
+
+~~~~Take $X_i$'s , which are random variables, that are independent and identically distributed ($i.i.d.$)
+\
+~~~~Assume $"Var"[X_i] = sigma^2$, we can have:
+$
+  "Var"[ overline(x) ] = "Var"[1/n sum_i X_i] = 1/n sigma^2
+$
+
+~~~~If we drop the independent assumption, now $X_i$'s are just $i.d$.
+\
+~~~~Suggest $X_i$'s are correlated by $rho$ , now :
+$
+  "Var"[overline(x)] = rho sigma^2 + (1-rho) / n sigma^2
+$
+(we can intuitively understand it when $rho = 0$ or $rho = 1$)
+
+
+
+2 ) 现在我们转换至决策树的视角 ：
+$
+                   X_i & = "第 i 个模型在某个测试点上的预测值" \
+                     n & = "集成中的模型数量" \
+           overline(X) & = "集成后的预测（n 个模型预测的平均）" \
+                   rho & = "模型之间预测的相关系数" \
+  "Var"[ overline(X) ] & = "集成后预测的方差"
+$
+~~~~上一讲中我们推导过：
+
+#rect[
+  $
+    "总误差"= "Bias" + "Vairance" + "Inreducible error"
+  $
+]
+
+~~~~而决策树是一个 高Variance低Bias 的模型，所以使用集成方法我们目标主要在于降低 Variance.\
+~~~~根据上面的数学公式，一方面要运用很多种模型，让 $n$（训练得到的模型数量） 变大； 另一个就是 $X_i$ 之间要去相关化这样让 $rho$ 变小，也就是要降低模型之间的相关性，这样才能降低最终的方差。
+\
+\
+\
+\
+
+- *Ways to Emsemble*
+
+1) Use different algorithms\
+(we can take multiple algorithms like neural networks, random forest, SVM ... and take the average of them, but it's not a time-efficient method)
+
+2) Use different training sets\
+(collecting new data will cost a lot)
+
+3) *Bagging* (random forests : bagging variant for decision trees)
+
+4) *Boosting* (Adaboost, xgboost)
+
+\
+\
+\
+
+
+- *Bagging —— Boostrap Aggregation*
+
+*_Bootstrap_* : A method used in statistics to measure the uncertainty of the estimate
+
+
+
+*_Assume_* :\
+~~~~Have a true population $P$, so the training set $S$ is sampled from $P$. ($S tilde P$)\
+
+~~~~Ideally, we just draw sets $S_1, S_2, dots$ and train the model separately on these different sets. But we don't have the time to do that.\
+
+~~~~What Bootstrapping does is that we *assume $S = P$*. So we can generate new samples from $S$ ! We can do sampling $N$ times from $S$ *_with replacement_* to get :
+
+*$ "Boostrap samples" Z "from" S $*
+~~~~Or we can do it in a mathematical way to say:
+$
+  Z tilde hat(P)_S\
+  hat(P)_S "is the empirical distribution defined by S"
+$
+
+~~~~Then we can take the models and train on the different bootstrap samples. Finally we look at the variablity in the predictions that the models end up making based on these different bootstrap samples and that'll give a measure of uncertainty.
+\
+\
+\
+
+- - *Bagging procedure*:\
+~~~~Suggest we have bootstrap samples: $Z_1, dots, Z_M$ And we'll train model $G_m$ on $Z_m$. Then we define a meta model :
+
+$
+  G_("bag")(x) = (sum_(m=1)^M G_m (x)) / M
+$
+
+~~~~So the whole procedure is : #underline[ take bootstrap samples, train separate models on the samples, and aggreagate themall together.]
+\
+\
+
+- - *Why does this work ? (Bias-Variance Analysis)*\
+
+~~~~Recall this formula from earlier :
+$
+  "Var"[overline(x)] & = rho sigma^2 + (1-rho) / n sigma^2 #h(1em) ("here" n = M) \
+                     & = rho sigma^2 + (1-rho) / M sigma^2
+$
+
+~~~~So what bootstrapping does is driving down $rho$ （Bootstrap 抽样让每个模型看到不同的训练集，从而使模型之间的预测去相关）, and when we take many bootstrap samples, we're increasing $M$ to bring down the variance.
+\
+~~~~Another advantage is that higher $M$ only decrease the variance, so it'll improve the performance without leading to overfitting. （过拟合一般是因为方差过大）
+\
+~~~~However, one problem is that when we use bootstrapping, we're potentially increasing the bias of our models. That's because of random subsampling.（训练数据越少，模型的偏差通常越大）(However, this is not significant compared with the gains obtained from training.)
+\
+\
+\
+\
+\
+\
+
+- *Decision Trees + Bagging —— (random forest)*
+~~~~Recall that decision trees are of high variance and of low bias. That makes them ideal fits for Bagging !
+\
+~~~~Random forest is sort of a version of decision trees + Bagging. And random forest actually introduces more randomnization into each individual decision tree.
+
+$
+  "random forests" = "Bagging" + "Decision Tree" + "additional randomnization"
+$
+
+Random Forests 在两个方面的随机化 ：\
+① 样本随机化（就是 Bagging 本身具有的）\
+② 特征随机化（特有的）： For each split of the random forest, we only consider a fraction of the total features. （每次分裂时我们只在一个小的特征子集里面来考虑最优的那个分类特征）\
+~~~~(Note that this is for decreasing $rho$ , for decorrelating the models. So we can decrease variance significantly. 因为如果数据中有一个非常强的特征，那么所有树可能会在很多层都选用这个特征来分类，导致所有树的结构相似，$rho$ 仍然很大)
+
+
+
+
+
+
+
+
+- *Boosting*
+\
+我们可以来对比一下两种做法的思路区别：
+#rect[
+  ~~~~① Bagging : 并行训练多个独立模型，取平均。主要降Bias\
+  ~~~~② Boosting : 串行训练多个基模型，每个新模型都试图修正前面模型的错误。主要降 Variance]
+~~~~Boosting 的 Additive 本质 : In boosting, we'll train one model and add that prediction into the emsemble. （Boosting 最后的模型是之前多个基模型的加权和）
+\
+
+
+
+\
+
+An illusration example :
+
+#figure(
+  image("images/Lec10_boosting_dataset.jpg", width: 55%),
+  caption: [dataset 4],
+)
+
+~~~~Say we have a *size 1 dcision tree (decision stumps)*. #underline[By limiting depth to 1, we're actually decreasing the variance while allow for high bias. That makes them suitable for boosting method.]
+\
+\
+~~~~Assume we've got this decision boundary:
+
+#figure(
+  image("images/Lec10_boosting_decision-boundary1.jpg", width: 55%),
+  caption: [dataset4 : boosting decision boundary1],
+)
+
+
+
+~~~~Then we'll identify the mistakes we've made in the graph :
+
+#figure(
+  image("images/Lec10_boosting_decision-boundary1_mistakes.jpg", width: 60%),
+  caption: [dataset4 : boosting decision boundary2 with identified mistakes],
+)
+
+
+~~~~What boosting actually does is to *_increase the weights of these misclassified examples_*. And for the next decision stump to be trained, we'll train it on this modified training set. And that'll probably give the new green line :
+
+#figure(
+  image("images/Lec10_boosting_decision-boundary2.jpg", width: 60%),
+  caption: [dataset4 : boosting decision boundary 2],
+)
+
+~~~~So we do this step recursively, keep reweighting the misclassified examples to give out a new boundary.
+\
+
+~~~~We determine that for classifier $G_m$, a weight $alpha_m$ is assinged to it. Better classifier will be assigned more weight, and the weight is proportional to how many examples the classifier get wrong or right.
+\
+\
+
+e.g: In Adaboost:
+$
+  alpha_m = log((1 - "error"_m) / "error"_m)
+$
+\
+
+~~~~Finally, the total classifier is :
+*$ G(x) = sum_m alpha_m G_m $*
+~~~~Each $G_m$ is trained on a reweighted training set.
+\
+\
+~~~~由于每一个分类器相当于是一个阶跃函数，所以多个阶跃函数的线性组合最后会得到非线性的决策边界。边界应当是一条阶梯状曲线。
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
 
 
 
