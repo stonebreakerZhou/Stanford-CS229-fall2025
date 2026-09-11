@@ -4353,8 +4353,179 @@ $
 
 
 
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XI]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Neural Networks
+\
+
+=== 1. Deep Learning
+\
+success reasons:
+- new computational methods
+- available data
+- algorithms
+
+\
+\
 
 
+- *Logistic Regression*
+\
+*$e.g^1$*
+~~~~Classification goal 1 : Find cats in the image :
+
+$
+  cases(
+    0 & #h(1em) "absence",
+    1 & #h(1em) "presence",
+  )
+$
+
+~~~~Given a image, we'll flatten it to a vector (by RGB channels), then we take this vector and push it into the operation $w x + b$. And then we apply the sigmoid function to it.
+
+（配图）
+
+~~~~For the image of pixels $64 times 64 times 3$ (3 is the RGB channels) :
+$
+  x in RR^(12288 times 1), w in RR^(1 times 12288)
+$
+\
+
+~~~~For the training process :\
+~~~~① Initialize the parameters $w, b$ (weights & biases)\
+~~~~② Find the optimal $w, b ->$ we have to define the loss function (from MLE)
+$
+  "Loss" = - y log hat(y) + (1-y) log (1- hat(y))
+$
+~~~~We'll use gradient descend to find the optimal solution.
+\
+~~~~③ Use $hat(y) = sigma(w x + b)$
+
+
+
+
+~~~~In this simple example, the parameters we need are :
+$
+  12288 "weights" + 1 "bias"
+$
+~~~~So the size of parameters depends on the size of input.
+\
+
+~~~~In this binary classification task, we need dataset of ${0, 1}$.
+
+\
+\
+
+- - *Two important equations*:\
+
+①
+$
+  "neuron" = "linear" + "activation"
+$
+~~~~In the example above:
+$
+  "neuron" = \"(w x + b)\" + "Sigmoid"
+$
+
+
+②
+$
+  "model" = "architecture" + "parameters"
+$
+
+
+
+\
+\
+\
+
+*$e.g^2$*
+~~~~Classification goal 2 : Find cats, lions, iguanas in the image  \
+
+~~~~Here we have 3 classes, one to implement this is to split 3 sets of weights and biases to give out 3 sets of outputs.
+
+（配图）
+
+~~~~Note that $[1]$ represents "layer" (neurons in the same layer won't communicate) ; index $1$ represents the neuron's index inside a certain layer.
+\
+~~~~As we have $hat(y)_1, hat(y)_2, hat(y)_3$, thus the output will be a 3-dimensional vector.
+\
+~~~~Correspondingly, we need dataset like :
+$
+  mat(1; 0; 0)
+$
+with each position representing different animals.
+\
+~~~~And the neurons' responsibilities will evolve according to how we label our dataset. （比如说标注数据集的时候第二维表示狮子存在与否，那么相应训练出来的第二个神经元就会负责识别图片里面的狮子）
+\
+\
+~~~~*Robustness* : 以上的这种做法具有鲁棒性因为这一层三个神经元之间没有相互交流，所以我们可以独立地训练这三个神经元。标注数据中比如说代表狮子的存在与否如果从第二维挪到第三维，那么相应的神经元也将从第二个变为第三个（也就是第三个神经元会潜在地自动承担起识别狮子的任务！）
+
+
+\
+\
+\
+
+
+*$e.g^3$ *
+~~~~Classification goal 3: We add a constraint that there's only one kind of animal in the image, and we want to classify that.
+\
+
+~~~~Note that here we introduce a notation *$Z_1^[1]$* for the linear part of the first neuron; and *$Z_2^[1]$, $Z_3^[1]$* for the second and third neurons.\
+~~~~So now there're two parts of a neuron : compute $Z$ , and then compute $sigma(Z)$
+\
+
+~~~~Now for this example, we're gonna remove all the activation function and only compute $Z$'s first.\
+（配图）
+
+\
+~~~~As the sum = 1, the three output probabilities are dependent to each other. So we take the one-hot labeling for our data :
+$
+  mat(1; 0; 0), mat(0; 1; 0) , mat(0; 0; 1)
+$
+
+~~~~And this is called softmax multi-class network.
+
+
+
+
+
+~~~~Note that here we shouldn't adopt the simple loss function $"Loss" = - y log hat(y) + (1-y) log (1- hat(y))$ before, because in this one-hot labeling, the loss will only $in {0, 1}$.
+
+~~~~Here let's define a loss function:
+$
+  "Loss"_(3 N) = - sum_(k = 1)^3 [y_k log hat(y)_k + (1 - y_k) log (1 - hat(y)_k)]
+$
+
+~~~~It's just doing three times of loss computation for each of the neurons. However, if we take the partial derivatives with regard to $W_2...$ , that'll be complex because of the relation between the three sets of parameters ! （？？？这一段不太理解）
+\
+~~~~So what we use in Softmax regression is the Softmax cross-entropy loss function :
+$
+  "Loss" = - sum_(k =1)^m y_k log hat(y)_k \ m "is the number of classes"
+$
+
+\
+\
+~~~~Furthermore, if we want to modify the current neural network to predict the age og the cat in the image, we can just change the sigmoid function in the network.（因为sigmoid函数把输出限制在(0,1)之间，但我们要输出的是年龄而不是概率）\
+~~~~We could just replace sigmoid with a linear function, or the *ReLU* function (rectified linear units) :\
+（配ReLU的图像）
+\
+~~~~Also we will change the loss function to suit this regression task. (maybe $||y - hat(y)||^2$ ($cal(l)_2$ norm)) And the loss function of regression is easier to optimize than the loss function of the classification (softmax...).
+
+
+
+
+
+
+
+
+#pagebreak()
 
 
 
