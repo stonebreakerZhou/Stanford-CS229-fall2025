@@ -4353,6 +4353,24 @@ $
 
 
 
+//全局配置 (放在最上面，只写一次)
+#set page(
+  paper: "us-letter",
+  columns: 2,
+  margin: (x: 1in, y: 1in), //缩减边距，让双栏更美观
+  //设置页码的计数
+  footer: context {
+    let page_number = counter(page).at(here()).first()
+    align(center, text(size: 9pt, font: "New Computer Modern")[
+      #page_number
+    ])
+  },
+)
+
+
+
+
+
 #place(top, scope: "parent", float: true)[
   #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
     #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XI]  //
@@ -4364,9 +4382,9 @@ $
 == Neural Networks
 \
 
-=== 1. Deep Learning
+=== Deep Learning Lec 1
 \
-success reasons:
+Reasons for DL's success :
 - new computational methods
 - available data
 - algorithms
@@ -4377,7 +4395,8 @@ success reasons:
 
 - *Logistic Regression*
 \
-*$e.g^1$*
+*1 )* *$e.g^1$*\
+
 ~~~~Classification goal 1 : Find cats in the image :
 
 $
@@ -4387,19 +4406,27 @@ $
   )
 $
 
-~~~~Given a image, we'll flatten it to a vector (by RGB channels), then we take this vector and push it into the operation $w x + b$. And then we apply the sigmoid function to it.
+~~~~Given a image, we'll flatten it to a vector (by RGB channels), then we take this vector and push it into the operation $w x + b$. And then we apply the sigmoid function to it. （也就是说，逻辑回归可以看作一个只有一个神经元的神经网络！）
 
-（配图）
+#figure(
+  image("images/Lec11_LR_eg1.jpg", width: 100%),
+  caption: [neural network $e.g^1$],
+)
+\
 
 ~~~~For the image of pixels $64 times 64 times 3$ (3 is the RGB channels) :
 $
   x in RR^(12288 times 1), w in RR^(1 times 12288)
 $
+
+\
+\
+\
 \
 
 ~~~~For the training process :\
 ~~~~① Initialize the parameters $w, b$ (weights & biases)\
-~~~~② Find the optimal $w, b ->$ we have to define the loss function (from MLE)
+~~~~② Find the optimal $w, b ->$ we have to define the loss function (from MLE method !)
 $
   "Loss" = - y log hat(y) + (1-y) log (1- hat(y))
 $
@@ -4425,9 +4452,7 @@ $
 - - *Two important equations*:\
 
 ①
-$
-  "neuron" = "linear" + "activation"
-$
+*$ "neuron" = "linear" + "activation" $*
 ~~~~In the example above:
 $
   "neuron" = \"(w x + b)\" + "Sigmoid"
@@ -4435,22 +4460,32 @@ $
 
 
 ②
-$
-  "model" = "architecture" + "parameters"
-$
+*$ "model" = "architecture" + "parameters" $*
 
 
 
-\
-\
-\
 
-*$e.g^2$*
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
+*2 )* *$e.g^2$*\
+
 ~~~~Classification goal 2 : Find cats, lions, iguanas in the image  \
 
 ~~~~Here we have 3 classes, one to implement this is to split 3 sets of weights and biases to give out 3 sets of outputs.
 
-（配图）
+#figure(
+  image("images/Lec11_LR_eg2.jpg", width: 100%),
+  caption: [neural network $e.g^2$],
+)
 
 ~~~~Note that $[1]$ represents "layer" (neurons in the same layer won't communicate) ; index $1$ represents the neuron's index inside a certain layer.
 \
@@ -4465,15 +4500,22 @@ with each position representing different animals.
 ~~~~And the neurons' responsibilities will evolve according to how we label our dataset. （比如说标注数据集的时候第二维表示狮子存在与否，那么相应训练出来的第二个神经元就会负责识别图片里面的狮子）
 \
 \
+\
+\
+\
+
 ~~~~*Robustness* : 以上的这种做法具有鲁棒性因为这一层三个神经元之间没有相互交流，所以我们可以独立地训练这三个神经元。标注数据中比如说代表狮子的存在与否如果从第二维挪到第三维，那么相应的神经元也将从第二个变为第三个（也就是第三个神经元会潜在地自动承担起识别狮子的任务！）
 
 
 \
-\
-\
 
 
-*$e.g^3$ *
+
+
+
+
+*3 )* *$e.g^3$ *\
+
 ~~~~Classification goal 3: We add a constraint that there's only one kind of animal in the image, and we want to classify that.
 \
 
@@ -4481,8 +4523,12 @@ with each position representing different animals.
 ~~~~So now there're two parts of a neuron : compute $Z$ , and then compute $sigma(Z)$
 \
 
-~~~~Now for this example, we're gonna remove all the activation function and only compute $Z$'s first.\
-（配图）
+~~~~Now for this example, we're gonna remove all the activation function and only compute $Z$'s first.
+
+#figure(
+  image("images/Lec11_softmax_eg.jpg", width: 100%),
+  caption: [softmax classification neural network],
+)
 
 \
 ~~~~As the sum = 1, the three output probabilities are dependent to each other. So we take the one-hot labeling for our data :
@@ -4490,31 +4536,41 @@ $
   mat(1; 0; 0), mat(0; 1; 0) , mat(0; 0; 1)
 $
 
-~~~~And this is called softmax multi-class network.
+~~~~And this is called *softmax multi-class network*.
+
+
+\
+\
+\
+~~~~Note that here we shouldn't adopt the simple loss function $"Loss" = - y log hat(y) + (1-y) log (1- hat(y))$ like before, 因为 Softmax 强制三个输出之和为 1，但如果对每个输出独立使用二元交叉熵，损失函数会鼓励每个输出独立地接近目标，但归一化约束使它们无法同时独立满足，导致梯度冲突。所以我们应该换一个损失函数！
+\
+\
+\
 
 
 
-
-
-~~~~Note that here we shouldn't adopt the simple loss function $"Loss" = - y log hat(y) + (1-y) log (1- hat(y))$ before, because in this one-hot labeling, the loss will only $in {0, 1}$.
-
-~~~~Here let's define a loss function:
+~~~~如果我们尝试使用这种 loss function:
 $
   "Loss"_(3 N) = - sum_(k = 1)^3 [y_k log hat(y)_k + (1 - y_k) log (1 - hat(y)_k)]
 $
 
-~~~~It's just doing three times of loss computation for each of the neurons. However, if we take the partial derivatives with regard to $W_2...$ , that'll be complex because of the relation between the three sets of parameters ! （？？？这一段不太理解）
+~~~~假如我们现在对第二个神经元的权重 $w^[2]$ 求导，结果会非常复杂，因为每个 $hat(y)_k$​ 都依赖于所有 $Z_j$​，而每个 $Z_j$ 又对应自己的一套参数。所以对 $w^[2]$ 求导时，不仅第二项有贡献，第一项和第三项也会通过分母中的 $e^(Z_2)$​ 产生影响。链式法则展开会牵扯到所有参数，导致梯度表达式极其冗长。
 \
-~~~~So what we use in Softmax regression is the Softmax cross-entropy loss function :
+~~~~So what we use in Softmax regression is the *Softmax cross-entropy loss function* :
 $
   "Loss" = - sum_(k =1)^m y_k log hat(y)_k \ m "is the number of classes"
 $
 
 \
 \
-~~~~Furthermore, if we want to modify the current neural network to predict the age og the cat in the image, we can just change the sigmoid function in the network.（因为sigmoid函数把输出限制在(0,1)之间，但我们要输出的是年龄而不是概率）\
+~~~~Furthermore, if we want to modify the current neural network to predict the age of the cat in the image, we can just change the sigmoid function in the network.（因为sigmoid函数把输出限制在(0,1)之间，但我们要输出的是年龄而不是概率）\
 ~~~~We could just replace sigmoid with a linear function, or the *ReLU* function (rectified linear units) :\
-（配ReLU的图像）
+
+#figure(
+  image("images/Lec11_ReLU.jpg", width: 50%),
+  caption: [ReLU activation],
+)
+
 \
 ~~~~Also we will change the loss function to suit this regression task. (maybe $||y - hat(y)||^2$ ($cal(l)_2$ norm)) And the loss function of regression is easier to optimize than the loss function of the classification (softmax...).
 
@@ -4523,9 +4579,199 @@ $
 
 
 
+- *Neural Networks*
+\
+- - For this neural network below :
+
+#figure(
+  image("images/Lec11_neural_network_architecture_eg.jpg", width: 100%),
+  caption: [simple neural network architecture],
+)
+
+\
+~~~~We know that the number of the outputs of the neural network should correspond to the classification task. (one output —— regression; multiple outputs —— classification)
+
+\
+~~~~Now let's consider the number of parameters in this neural network :
+
+#figure(
+  image("images/Lec11_neural_network_parameters.jpg", width: 100%),
+  caption: [parameters in the neural network],
+)
+\
+~~~~And we define some vocabulary here:
+
+#figure(
+  image("images/Lec11_neural_network_3layers.jpg", width: 100%),
+  caption: [3 layers of the neural network],
+)
+
+
+~~~~"Hidden layer" means that the input and output are all hidden from this layer. And we don't know what they try to figure out from the image.
+
+\
+
+~~~~What's interesting about the neural networks is that we'll find that the fundamental function of the first several layers is detecting some edges. Then hidden layers receive the abstract of the input and they'll detect like ears, mouth of the cat. And the last layers will contruct a face and decide whether it is a cat.
+
+\
+\
+- - Another example : house price prediction
+~~~~If letting human construct a neural network, we may construct the information stream according to human knowledge like this :
+
+#figure(
+  image("images/Lec11_house_price_neural_network_with-knowledge.jpg", width: 80%),
+  caption: [neural network with precedent knowledge],
+)
+\
+~~~~However, we always allow for a full connection between the neighboring layers, so that'll be a blackbox model, and it's called end-to-end learning. (we don't constraint networkd in the middle)
+
+#figure(
+  image("images/Lec11_house_price_neural_network_fully-connected.jpg", width: 80%),
+  caption: [black-box nueral network],
+)
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Propagation Equation*
+
+~~~~We try to write the propagation equation from the input layer to the output layer. (here it's a 3-layer neural network)
+
+#figure(
+  image("images/Lec11_propagation_architecture.jpg", width: 100%),
+  caption: [simple neural network architecture],
+)
+
+$
+  Z^[1] = w^[1] x + b^[1]\
+  a^[1] = sigma(Z^[1])\
+  Z^[2] = w^[2] a^[1] + b^[2]\
+  a^[2] = sigma(Z^[2])\
+  Z^[3] = w^[3] a^[2] + b^[3]\
+  a^[3] = sigma(Z^[3])
+$
+
+~~~~Then we can derive all the shapes of the parameters and the intermediate variables.
+
+$
+  Z^[1] in RR^(3 times 1) -> w^[1] in RR^(3 times n) -> b^[1] in RR^(3 times 1) -> a^[1] in RR^(3 times 1)\
+  Z^[2] in RR^(2 times 1) -> w^[2] in RR^(2 times 3) -> b^[2] in RR^(2 times 1) -> a^[2] in RR^(2 times 1)\
+  Z^[3] in RR^(1 times 1) -> w^[3] in RR^(1 times 2) -> b^[3] in RR^(1 times 1) -> a^[3] in RR^(1 times 1)
+$
+
+~~~~So we can intuitively see that the dimension of $Z$ corresponds to the number of neurons in that layer, and the size of $w$ corresponds to the number of edges connecting two layers.
+
+\
+\
+\
+
+- *A batch of $m$ examples*
+
+~~~~Now the shape of the input is:
+
+#figure(
+  image("images/Lec11_batched_input.jpg", width: 60%),
+  caption: [shape of batched input $X$],
+)
+
+~~~~So the size of the intermediate variables gets changed to:
+$
+  Z^[1] in RR^(3 times m) ("each column vector is a previos" Z^[1])\
+  Z^[2] in RR^(2 times m), #h(1em) Z^[3] in RR^(1 times m)
+$
+
+#figure(
+  image("images/Lec11_batched_linear_part.jpg", width: 70%),
+  caption: [shape of linear part $Z$],
+)
+
+~~~~However, the size of the parameters $w, b$ remains the same as before !\
+~~~~Note that here $b$ remains the same, because we do *broadcasting* to expand $b^[1]$ from $RR^(3 times 1)$ to $RR^(3 times m)$ !!! (copy the column vector $m$ times to get a matrix)
+
+\
+\
+\
+\
+\
+\
+
+
+- *Optimizing*
+
+*_Goal_* : Optimize $w^[1], w^[2], w^[3], b^[1], b^[2], b^[3]$
+\
+\
+
+- - _*Define : loss / cost function*_\
+(loss : only one example in the batch; \
+cost : multiple examples in the batch)
+\
+
+*$ cal(J)(hat(y), y) = 1/ m sum_(i=1)^m cal(L^((i))) $*
+
+~~~~We normalize it with $1/m$ because we're goihng for batch gradient descent. (compute loss function for the whole batch, then calculate the cost function that'll be derived and give us the direction of the greadients)
+
+~~~~So $cal(L^((i)))$ is the loss function corresponding to only one input. So it'll be a _logistic loss function_ :
+
+*$ cal(L^((i))) = - [y^((i)) log hat(y)^((i)) + (1 - y^((i))) log (1 - hat(y)^((i)))] $*
+
+
+
+
+
+- - *Backpropagation*
+
+~~~~Why backward ? \
+~~~~Because we want to apply the iterative updating algorithm to the parameter $w$, and we start from the layer that's closest to the loss function :
+
+$
+  w^((l)) := w^((l)) - alpha (partial cal(J)) / (partial w^((l)))\
+  b^((l)) := b^((l)) - alpha (partial cal(J)) / (partial b^((l)))\
+  "for every layer" (forall l = 1, 2, 3)
+$
+
+\
+~~~~Because $cal(J)$ depends on $hat(y)$, and $hat(y)$ depends on $Z^[3]$, and also $Z^[3]$ depends on $w^[3]、 a^[2]$, so we do this chain rule :
+
+$
+  (partial cal(J)) / (partial w^[3]) &= (partial cal(J)) / (partial a^[3]) dot (partial a^[3]) / (partial Z^[3]) dot (partial Z^[3]) / (partial w^[3])
+$
+
+~~~~And when we move the layer before :
+$
+  (partial cal(J)) / (partial w^[2]) = (partial cal(J)) / (partial Z^[3]) dot (partial Z^[3]) / (partial a^[2]) dot (partial z^[2]) / (partial a^[2]) dot (partial a^[2]) / (partial w^[2])
+$
+
+~~~~Then in this expression, we'll plug in the $(partial cal(J)) / (partial Z^[3])$ that was derived before.
+
+
+（这个地方要思考下怎样找到合适的路径！）
+比如说就不能去求 $(partial w^[2]) / (partial a^[1])$ !）
+
+
+
+
+
 
 
 #pagebreak()
+
+
+
+
+
+
+
+
+
+
 
 
 
