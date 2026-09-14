@@ -4771,6 +4771,542 @@ $
 
 
 
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XII]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+
+
+=== 1. Backpropagation
+\
+*_cost function_* :
+
+$
+  cal(J)(hat(y), y) = 1/m sum_(i=1)^m cal(L)^((i)) (hat(y), y)
+$
+with
+$
+  cal(L^((i))) = - [y^((i)) log hat(y)^((i)) + (1 - y^((i))) log (1 - hat(y)^((i)))]
+$
+
+~~~~Each layer $l$ of the neural network has its own set of parameters $w^[l], b^[l]$, and we have this update rule :
+
+$
+  w^[l] := w^[l] - alpha (partial cal(J)) / (partial w^[l])
+$
+
+~~~~We also take this simple neural network as an illustration example :
+
+#figure(
+  image("images/Lec12_simple-nn_eg.jpg", width: 90%),
+  caption: [simple neural network],
+)
+\
+
+
+*1 )*~~~~ Now we want to compute $(partial cal(J)) / (partial w^[3])$ first because $w^[3]$ is closest to the final cost.\
+~~~~As $cal(J)$ is a sum expression, we'd simple compute $(partial cal(L)) / (partial w^[3])$ , because derivation is linear.
+
+$
+  (partial cal(L)) / (partial w^[3]) = -[y^((i)) partial / (partial w^[3]) (log(sigma(w^[3] a^[2] + b^[3])) + \
+      + (1 - y^((i))) log(1 - sigma(w^[3] a^[2] + b^[3])) )]
+$
+
+(note that $hat(y) = sigma(w^[3] a^[2] + b^[3])$)
+
+
+
+~~~~As we have these properties :
+$
+  (partial log(sigma(f))) / (partial w) = 1 /sigma(f) (partial (sigma(f))) / (partial w)
+$
+
+and
+
+$
+  sigma'(x) = sigma(x) (1 - sigma(x))
+$
+
+
+
+~~~~Therefore :
+
+$
+  partial / (partial w^[3]) (log(sigma(w^[3] a^[2] + b^[3])) & = 1 / (sigma(...)) dot (partial (sigma(...))) / (partial w^[3]) \
+                                   & = 1 / (sigma(...)) dot (sigma(...)(1 - sigma(...))) dot a^[2]^T \
+                                   & = (1 - sigma(w^[3] a^[2] + b^[3])) dot a^[2]^T
+$
+
+and similarly is the latter part :
+
+$
+  partial / (partial w^[3]) (log(1 - sigma(...))) & = 1 / (1 - sigma(...)) dot (-(partial sigma(...)) / (partial w^[3])) \
+                                                  & = 1 / (1 -sigma(...)) dot - sigma(...) (1 - sigma(...) dot a^[2]^T \
+                                                  & = -sigma(w^[3] a^[2] + b^[3]) dot a^[2]^T
+$
+
+
+
+~~~~Finally we have :
+
+$
+  (partial cal(L)) / (partial w^[3]) & = -[y^((i)) (1 -sigma(...)) a^[2]^T) - (1- y^((i))) sigma(...) a^[2]^T] \
+                                     & = - (y^((i)) - sigma(w^[3]a^[2] + b^[3])) a^[2]^T \
+                                     & = - (y^((i))- a^[3])a^[2]^T
+$
+
+~~~~Then we can derive the partial derivative of $cal(J)$ with repect to $w^[3]$ :
+
+$
+  (partial cal(J)) / (partial w^[3]) & = 1/m sum_(i=1)^m (- (y^((i))- a^[3])a^[2]^T) \
+$
+
+~~~~If we take the partial derivative of $cal(J)$ with respect to $b^[3]$, the difficulty will be the same.
+
+
+
+
+#pagebreak()
+
+
+
+
+
+~~~~*2 )* Now we'd think about how does the derivative backpropagate back to $w^[2]$.
+
+$
+  (partial cal(L)) / (partial w^[2]) = #text(fill: red)[$(partial cal(L)) / (partial a^[3]) dot (partial a^[3]) / (partial Z^[3])$] dot #text(fill: blue)[$(partial Z^[3]) / (partial a^[2])$] dot #text(fill: green)[$(partial a^[2]) / (partial Z^[2])$] dot #text(fill: purple)[$(partial Z^[2]) / (partial w^[2])$]
+$
+
+(we need variables that directly connect to each other to pass down the chain rule)
+
+
+
+
+~~~~Note that $(partial cal(L)) / (partial w^[3])$ corresponds to the first two terms (red parts) in $(partial cal(L)) / (partial w^[2])$ . So we just plug in and get :
+
+$
+  (partial cal(L)) / (partial w^[3]) &= #text(fill: red)[$(partial cal(L)) / (partial a^[3]) dot (partial a^[3]) / (partial Z^[3])$] dot (partial Z^[3]) / (partial w^[3])\
+  &= #text(fill: red)[$(partial cal(L)) / (partial a^[3]) dot (partial a^[3]) / (partial Z^[3])$] dot a^[2]^T
+$
+
+~~~~又因为我们已知
+
+$
+  (partial cal(L)) / (partial w^[3]) = - (y^((i))- a^[3])a^[2]^T
+$
+
+~~~~所以红色部分就等于 $- (y^((i))- a^[3])$
+\
+
+代入 $(partial cal(L)) / (partial w^[2])$ 后得：
+
+$
+  (partial cal(L)) / (partial w^[2]) &= - (y^((i))- a^[3]) dot #text(fill: blue)[$(partial Z^[3]) / (partial a^[2])$] dot #text(fill: green)[$(partial a^[2]) / (partial Z^[2])$] dot #text(fill: purple)[$(partial Z^[2]) / (partial w^[2])$]\
+  &= (a^[3] - y^((i))) dot #text(fill: blue)[$w^[3]^T$] dot #text(fill: green)[$a^[2] (1 - a^[2])$] dot #text(fill: purple)[$a^[1]^T$]\
+$
+
+~~~~Let's analysize the shapes of different part in this derivative :
+$
+  (a^[3] - y^((i))) in RR^(1 times 1) : "scalar"\
+  w^[3]^T in RR^( 2 times 1)\
+  a^[2] (1 - a^[2]) in RR^(2 times 1) : "element-wise product"\
+  a^[1]^T in RR^(1 times 3)
+$
+
+
+~~~~If we do the product very rigorously, then we order the terms in this way :
+
+$
+  (partial cal(L)) / (partial w^[2]) &= w^[3]^T #text(fill: red)[$*$] a^[2] (1 - a^[2]) dot (a^[3] - y^((i))) dot a^[1]^T\
+  &=>RR^(2 times 1) #text(fill: red)[$*$] RR^(2 times 1) dot RR^(1 times 1) dot RR^(1 times 3)\
+  &=> RR^(2 times 3)
+$
+
+\
+\
+
+~~~~Speaking of cache, in forward propagation, we're gonna store almost all the values we get and use them in backpropagation.
+
+\
+\
+\
+\
+
+
+
+
+
+=== 2. Improving NNs
+\
+
+- *Use different activation function*
+
+① *Sigmoid*
+
+#figure(
+  image("images/Lec12_sigmoid_plot.jpg", width: 60%),
+  caption: [$sigma(x)$],
+)
+$
+  sigma(z) = (1 / (1 + e^(-z)))\
+  sigma'(z) = sigma(z)(1 - sigma(z))
+$
+
+~~~~advantage : we can squeeze $(-infinity, +infinity)$ to $(0, 1)$ and output a number as a probability\
+
+~~~~disadvantage : if $z$ is too high or too low, the gradient is very close to $0$, then in backpropagation it's hard to do update
+
+
+② *ReLU*
+
+#figure(
+  image("images/Lec12_ReLU_plot.png", width: 60%),
+  caption: [ReLU$(x)$],
+)
+$
+  "ReLU"(z) = cases(0 #h(1em)"if" z<=0, z #h(1em) "if" z>0)\
+  "ReLU"'(z) = 1{z>0}
+$
+
+~~~~In ReLU, there's no problem of gradient vanish, because the gradient is always $1$ in the positive region.
+
+
+③ *tanh*
+
+#figure(
+  image("images/Lec12_tanh_plot.png", width: 60%),
+  caption: [$tanh (x)$],
+)
+$
+  tanh(z) = (e^z - e^(-z)) / (e^z + e^(-z))\
+  tanh'(z) = 1 - (tanh(z))^2
+$
+
+~~~~Similar to sigmoid.
+
+\
+\
+
+*_Why actiavtion function_* ?\
+e.g If there's no activation function, so that $a^[l] = Z^[l]$ :
+
+$
+  hat(y) = a^[3] = Z^[3] & = w^[3] a^[2] + b^[3] = w^[3] Z^[2] + b^[3] \
+                         & = w^[3] (w^[2] Z^[1] + b^[2]) + b^[3] \
+                         & = w^[3] (w^[2] (w^[1] x + b^[1]) + b^[2]) + b^[3] \
+                         & = W x + B
+$
+\
+~~~~So without activation the whole layers of neural network will be simplified as a single linear layer. (equal to a linear regression)
+
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+
+- *Initialization techniques*
+\
+
+- - *Input Initialization*
+~~~~*Normalize* the input to avoid saturation of the network (like $z$ is too high or low in sigmoid) :
+\
+
+~~~~Suggest we have input $x = mat(x_1; x_2)$, then the distribution may like this :
+
+#figure(
+  image("images/Lec12_raw_input.jpg", width: 50%),
+  caption: [raw input $x$ distribution],
+)
+
+\
+~~~~The problem is when we do $w^[1] x + b^[1]$ to compute $Z^[1]$, if $x$ is too big then big $Z^[1]$ may lead to saturate activation.
+\
+
+~~~~So the technique is to normalize $x$:
+$
+  mat(mu_1; mu_2) = mu = 1/m sum_(i=1)^m x^((i))\
+  sigma^2 = 1/m sum_(i=1)^m (x^((i)) - mu)^2
+$
+
+~~~~Then we normalize $x$ :
+$
+  x := (x - mu) / sigma
+$
+~~~~That'll change $x$'s distribution to this :
+
+#figure(
+  image("images/Lec12_normalized_input.jpg", width: 50%),
+  caption: [normalized input $x$],
+)
+
+(note that when we do testing, we use the $mu, sigma$ from above to normalize the test set ! (should not compute the mean and variance of the test set !))
+
+~~~~And the loss function may change from the left one to the right one :
+
+#figure(
+  image("images/Lec12_normalized_loss-plot_compare.jpg", width: 80%),
+  caption: [normalized $->$ loss plot comparison],
+)
+
+~~~~As we look at the gradient decent route, the right one is more efficient.
+
+#figure(
+  image("images/Lec12_normalized_loss-plot-route_compare.jpg", width: 80%),
+  caption: [normalized $->$ optimizing route comparison],
+)
+\
+\
+\
+\
+\
+\
+\
+
+
+- - *Weights Initialization*
+\
+*1) Problem : Vanishing | Exploding gradients*
+\
+
+*①*
+~~~~Now we consider a simple neural network, in which we let activation = $I$, $b=0$ (no actiavation, no bias).
+$
+  hat(y) = w^[l] w^[l-1] dots w^[1] x
+$
+
+~~~~If $w = mat(s, 0; 0, s)$, then if $s<1$, the gradient would vanish when doing the multiplication; and if $s>1$, the gradient would explode.
+
+
+~~~~One way to solve this is to initialize $w$ into the right range of value. In the case above, we want $s approx 1$.
+
+
+
+*②*
+~~~~Example with $1$ neuron :
+
+#figure(
+  image("images/Lec12_one_neuron_eg.jpg", width: 45%),
+  caption: [single neuron],
+)
+
+~~~~It has multiple inputs and outputs and an activation $a$.
+
+e.g:
+$
+  a = sigma(Z);\
+  Z = w_1 x_1 + dots + w_n x_n
+$
+
+~~~~假设：
+    输入 $x_i$​ 独立同分布，均值为 0，方差为 $"Var"(x)$; 权重 $w_i$​ 独立同分布，均值为 0，方差为 $"Var"(w)$
+\
+~~~~我们为了避免 $Z$ 进入激活函数的饱和区，应当控制 $Z$ 在每一层传播的方差应当保持不变，即要使得 $"Var"(x) approx "Var"(z)$
+
+$
+  "Var"(Z) &= "​Var"(sum_(i=1)^n w_i x_i​) = sum_(i=1)^n "Var"(w_i x_i)\ &= n dot "Var"(w) dot "Var"(x)\
+  &approx "Var"(x)
+$
+
+~~~~所以我们需要使 $"Var"(w) approx 1/n$
+
+\
+\
+\
+
+
+
+
+*2 ) Weights Initialization Techiniques* :
+\
+\
+
+
+① *Sigmoid activations*
+```py
+w^(l) = np.random.randn(shape) * np.sqrt(1 / n^(l-1))
+```
+~~~~We're looking at how many inputs come into our layer $l$ , and initialize the weights of this layer proportionally to the number of inputs that are coming in. This initialization is proved to behave well for *_sigmoid_* activations.
+\
+~~~~这个与上面的那个简单例子相同，所以得出来的结论一样，就是要让 $"Var"(w) approx 1 / n^(l-1)$ ($n^(l-1)$是第 $l$ 层的输入个数)
+
+
+
+
+
+② *ReLU activations*
+\
+~~~~Interestingly, if we use *_ReLU_*, it's better to change the numerator from $1$ to $2$ （ReLU 会把一半的神经元置零（负输入的输出为 0）。这意味着实际有效的输入个数只有一半。为了补偿这种“减半”效应，需要把方差放大一倍）:
+
+```py
+w^(l) = np.random.randn(shape) * np.sqrt(2 / n^(l-1))
+```
+
+~~~~The reason why we use random initialization is that if there's no randomness, we'll end up with a problem called symmetry where every neuron is going to learn kind of the same thing.
+
+\
+
+
+
+③ *Xavier Initialization*
+
+~~~~这种初始化同时考虑前向传播和反向传播的方差稳定性：\
+~~~~前向传播要求：$"Var"(w^l) approx 1 / (n^(l-1))$；\
+~~~~反向传播要求：$"Var"(w^l) approx 1 / (n^l)$\
+~~~~两者折中，取调和平均，即得：
+
+$
+  "Var"(w^l)= 2 / (n^(l−1)+n^l​)
+$
+
+~~~~也即得：
+
+$
+  w^l tilde cal(N)(0, 2 / (n^(l−1)+n^l​))
+$
+
+~~~~这种初始化适用于 $tanh$ / sigmoid 作激活函数的时候
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Optimization*
+\
+- - *Mini-batch gradient descent*
+
+~~~~Suggest we have a dataset like :
+
+$
+  X = (x^((1)), dots, x^((m)))\
+  Y = (y^((1)), dots, y^((m)))\
+$
+
+~~~~Then we split it into batches (a total of $T$ batches) :
+
+$
+  X = (x^({1}), dots, x^({T}))\
+  Y = (y^({1}), dots, x^({T}))
+$
+
+\
+
+~~~~Now the Mini-batch gradient descent algorithm works like this :
+
+#rect[
+  For iteration t = 1 , ... : \
+  ~~~~Select a batch of data $(x^({t}), y^({t}))$ :\
+  ~~~~~~~~Forward propagate this batch\
+  ~~~~~~~~Backpropagate this batch\
+  ~~~~~~~~Update all $w^l, b^l$ for all layers\
+]
+
+~~~~Forward propagate : we send all the data in this batch into the network and compute the loss function over the entire batch.
+\
+~~~~If we look at the graphs for  cost function :
+
+#figure(
+  image("images/Lec12_cost_function_compare.jpg", width: 80%),
+  caption: [cost function comparison],
+)
+
+~~~~On the left we use batch gradient descent, and the cost function would smoothly descend as iteration increases. \
+~~~~On the right we use mini-batch gradient descent and because the gradient is approximated and doesn't neccessarily go straight to the lower point of the cost function, we have noises on the cost function, but the cost is decreasing as a trend.
+
+#figure(
+  image("images/Lec12_mini-batch_GD_plot.jpg", width: 70%),
+  caption: [mini-batch GD route],
+)
+
+~~~~Though mini-batch gradient descent needs more iterations, but each iteration of it is much easier to compute, so it's more efficient than batch gradient descent.
+
+\
+\
+\
+\
+\
+\
+
+- - *Momentum Algorithm*
+
+~~~~Intuition : Let's look at this loss contour plot :
+
+#figure(
+  image("images/Lec12_momentum_loss-plot1.jpg", width: 60%),
+  caption: [loss contour plot],
+)
+
+~~~~The ordinary gradient descent's route is always orthogonal to the contour curve, so the route may like this :
+
+#figure(
+  image("images/Lec12_momentum_loss-plot2.jpg", width: 60%),
+  caption: [ordinary GD optimization route],
+)
+
+
+~~~~So how to improve efficiency ? We want to move with larger updates horizontally, and move with  smaller updates vertically.
+\
+#figure(
+  image("images/Lec12_momentum_loss-plot3.jpg", width: 80%),
+  caption: [shape of linear part $Z$],
+)
+~~~~So we're gonna use a technique called momentum， which is going to look at the past gradients, and tried to consider these past updates to find the correct direction.
+\
+~~~~When we look at the past updates, we'd take the average of the past horizontal and vertical updates. Here, because we're essentially keep moving rightward, so there'll be little change to horizontal update, but since there's ups and downs vertically, we'd take smaller vertical updates.
+
+#figure(
+  image("images/Lec12_momentum_loss-plot4.jpg", width: 70%),
+  caption: [shape of linear part $Z$],
+)
+\
+~~~~That'll lead us faster to optimal point.
+
+\
+
+*_momentum_* : "have weight", so cannot change direction very noisily.
+
+\
+
+初始化 ： $v = 0$ ，
+$
+  v & := beta v + (1 - beta) (partial cal(L)) / (partial w) \
+  w & := w - alpha v
+$
+
+~~~~这样 $w$ 的更新直接使用的是 $v$，这样的话 $v$ 既有当前的梯度值，也有历史的方向值，这样与“惯性”含义有些类似。
+
+#pagebreak()
+
+
+
+
+
+
+
+
+
 
 
 
