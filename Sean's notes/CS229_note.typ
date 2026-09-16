@@ -5110,13 +5110,14 @@ $
 $
 
 ~~~~假设：
-    输入 $x_i$​ 独立同分布，均值为 0，方差为 $"Var"(x)$; 权重 $w_i$​ 独立同分布，均值为 0，方差为 $"Var"(w)$
+输入 $x_i$​ 独立同分布，均值为 0，方差为 $"Var"(x)$; 权重 $w_i$​ 独立同分布，均值为 0，方差为 $"Var"(w)$
 \
 ~~~~我们为了避免 $Z$ 进入激活函数的饱和区，应当控制 $Z$ 在每一层传播的方差应当保持不变，即要使得 $"Var"(x) approx "Var"(z)$
 
 $
-  "Var"(Z) &= "​Var"(sum_(i=1)^n w_i x_i​) = sum_(i=1)^n "Var"(w_i x_i)\ &= n dot "Var"(w) dot "Var"(x)\
-  &approx "Var"(x)
+  "Var"(Z) & = "​Var"(sum_(i=1)^n w_i x_i​) = sum_(i=1)^n "Var"(w_i x_i) \
+           & = n dot "Var"(w) dot "Var"(x) \
+           & approx "Var"(x)
 $
 
 ~~~~所以我们需要使 $"Var"(w) approx 1/n$
@@ -5297,7 +5298,320 @@ $
 
 ~~~~这样 $w$ 的更新直接使用的是 $v$，这样的话 $v$ 既有当前的梯度值，也有历史的方向值，这样与“惯性”含义有些类似。
 
+
+
+
+
+
+
+
+
+
+
 #pagebreak()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XIII]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Model Debugging and Error Analysis
+\
+outline :
+- Diagnostics for debugging learning algorithms
+- Error analysis and ablative analysis
+- Premature (statistical) optimization
+
+\
+
+=== 1. Debugging Learning Algorithms
+
+\
+- *Motivating Example* :
+
+~~~~If we're constructing an anti-spam classifier, and we carefully choose a small set of 100 words to use as features.
+\
+
+~~~~Now we use logistic regression with regularization (Bayesian logistic regression), implemented with gradient ascent but gets a really high test error.
+
+(Bayesian Logistic Regression) :
+
+$
+  max_theta sum_(i=1)^m log p(y^((i)) | x^((i)), theta) - lambda ||theta||^2
+$
+
+\
+
+#rect[
+  *Common approaches* :
+  - Try getting more training examples
+  - Try a smaller / larger set of features
+  - Try changing the features : Email header vs. email body features
+  - Run gradient descent for more iterations
+  - Try Newton's method
+  - Use a different value for $lambda$
+  - Try using an SVM / neural network
+]
+
+\
+
+~~~~An effective way we often use is *bias-variance diagnostic*. (high bias $->$ underfit; high variance $->$ overfit)
+
+
+
+
+
+- *Bias - Variance Diagnostic* :
+① Variance : Training error will be much lower than test error\
+② Bias : Training error will also be high
+
+\
+
+*1 )* Typical learning curve for high variance :
+
+
+#figure(
+  image("images/Lec13_learning-curve_high-variance.jpg", width: 70%),
+  caption: [learning curve for high variance],
+)
+\
+~~~~This corresponds to overfitting : \
+① Test error still decreasing as $m$ increases. Suggest larger training set will help.\
+② *_Large gap between training and test error._* (this is more important !)
+
+
+\
+\
+
+*2 )* Typical Learning curve for high Bias :
+
+#figure(
+  image("images/Lec13_learning-curve_high-bias.jpg", width: 70%),
+  caption: [learning curve for high bias],
+)
+\
+① Even training error is unacceptably high\
+② _*Small gap*_ between training and test error
+
+\
+
+
+
+
+
+3 ) Now we can recall the fixes we use before :
+
+#rect[
+  - Try getting more training examples —— #text(fill: red)[Fixes high variance]
+  - Try a smaller set of features —— #text(fill: red)[Fixes high variance]
+  - Try a larger set of features —— #text(fill: red)[Fixes high bias]
+  - Try email header features —— #text(fill: red)[Fixes high bias]
+  - Use a different value for $lambda$ —— #text(fill: red)[bias-variance trade off （正则化越强$->$增大偏差减小方差 ！）]
+]
+
+\
+\
+\
+\
+\
+
+
+
+
+- *Another example :*
+
+~~~~Logistic regression gets 2% error on both spam and non-spam (Unacceptable high error on non-spam)\
+~~~~SVM using a linear kernel gets 10% error on spam, and 0.01% error on non-spam. (Acceptable performance)\
+~~~~But we still want to use LR because of computational efficiency.
+
+\
+
+
+
+Questions:\
+
+~~~~*①* *_Is the algorithm (gradient ascent for logistic regression) converging ?_*\
+~~~~Usually we have this curve :
+
+#figure(
+  image("images/Lec13_maximize_J(theta).jpg", width: 60%),
+  caption: [objective optimization function],
+)
+
+
+~~~~It's often very hard to tell if an algorithm has converged yet by looking at the objective.
+
+
+
+
+
+~~~~*②* *_Are you optimizing the right function ?_*
+
+e.g. (maybe we'd care more about non-spam than spam so we should weight them more)
+
+$
+  a(theta) = sum_i w^((i)) 1{h_theta (x^((i))) = y^((i))}
+$
+
+
+
+~~~~*③* _*Is logistic regression the right model ? If yes, is λ correct ?*_
+
+$
+  max_theta J(theta) = sum_(i=1)^m log p(y^((i))|x^((i)), theta) - lambda ||theta||^2
+$
+
+
+
+~~~~*④* _*Is SVM the right model ? If yes, is C correct ?*_
+
+$
+  min_(w, b) ||w||^2 + C sum_(i=1)^m xi_i\
+  s.t. y^((i))(w^T x^((i)) - b) >= 1 - xi_i
+$
+
+\
+\
+
+~~~~We can summarize the example above like this : \
+~~~~We've got $theta_("SVM")$ and $theta_("BLR")$ (BLR = Bayesian Logistic Regression). For this function that we really care :
+
+$
+  a(theta) = sum_i w^((i)) 1{h_theta (x^((i))) = y^((i))}
+$
+
+~~~~We now have
+$
+  a(theta_("SVM")) > a(theta_("BLR"))
+$
+
+~~~~Remember our $theta_("BLR")$ comes from maximizing $J(theta)$ in BLR.
+
+\
+\
+\
+\
+\
+\
+- *Optimization Algorithm Diagnostics*
+
+~~~~Then the diagnostic can be :
+
+$
+  J(theta_("SVM")) >^? J(theta_("BLR"))
+$
+
+\
+
+
+
+*case 1* :
+$
+  a(theta_("SVM")) > a(theta_("BLR"))\
+  J(theta_("SVM")) > J(theta_("BLR"))
+$
+
+~~~~But $theta_("BLR")$ was trying to maximize $J(theta)$. So we can infer that $theta_("BLR")$ fails to maximize $J(theta)$ and the problem is with the convergence of the algorithm.
+—— #text(fill: red)[Problem : optimization algorithm]
+
+\
+
+*case 2* :
+$
+  a(theta_("SVM")) > a(theta_("BLR"))\
+  J(theta_("SVM")) <= J(theta_("BLR"))
+$
+
+~~~~BLR was successful in maximizing $J(theta)$, but SVM does better at the weighted accuracy $a(theta)$. This means that $J(theta)$ is the wrong objective function to maximize if we care about $a(theta)$. —— #text(fill: red)[Problem : Objective function of the maximization problem.] （ case 2 对应的修复方法：修改当前模型的目标函数（比如调整 $lambda, C$ 值）；或者直接换一个模型（这样天然就会修改目标函数））
+
+\
+
+
+
+\
+
+Again we come back to these approaches:
+
+#rect[
+  - Run gradient descent for more iterations —— #text(fill: red)[Fixes optimization algorithm]
+  - Try Newton's method —— #text(fill: red)[Fixes optimization algorithm]
+  - Use a different value for $lambda$ —— #text(fill: red)[Fixes optimization objective] (note that this approach is more often used in bias-variance trade-off)
+  - Try using an SVM / neural network —— #text(fill: red)[Fixes optimization objective or change to a different model]
+]
+
+\
+
+The diagnostics above can be used for debugging *RL* algorithms.
+
+\
+
+
+
+
+
+
+=== 2. Error Analysis
+\
+~~~~Many applications combine many different learning components into a "pipeline".
+
+#figure(
+  image("images/Lec13_system-pipeline.png", width: 100%),
+  caption: [system pipeline],
+)
+
+~~~~Now we want to analysize how much error is attribute to each of the component so we can decide which component to work on next.
+
+~~~~Plug in ground-truth for each component, and see how accuravy changes. Then we find in which part lies the most room for improvement.
+
+
+~~~~Error helps to figure out the *_difference between the current point and our goal (perfect performance)_*.
+
+
+\
+\
+\
+\
+\
+\
+=== 3. Ablative Analysis
+\
+~~~~Remove components from the system one at a time, to see how it breaks.\
+~~~~Then we can find out which part accounts for most of the improvement.
+
+\
+~~~~It tries to explain *_difference between our current performance and performance much worse_*.
+
+
+
+
+
+
+
+
+
+#pagebreak()
+
 
 
 
