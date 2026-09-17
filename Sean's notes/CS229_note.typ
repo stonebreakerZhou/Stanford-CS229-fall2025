@@ -5622,6 +5622,763 @@ The diagnostics above can be used for debugging *RL* algorithms.
 
 
 
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XIV]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Unsupervised Learning
+\
+
+
+=== 1. K-Means Clustering
+
+\
+
+~~~~First, we're given an unlabeled dataset. And we want an algorithm to try to find maybe the two clusters here.
+
+#figure(
+  image("images/Lec14_k-means_1.jpg", width: 40%),
+  caption: [system pipeline],
+)
+\
+
+
+~~~~*First step* : Pick two crosses —— cluster centroids. And we go through all the training examples and for each of them we colored them as two categories depending on their distance to the centroids.
+
+#figure(
+  image("images/Lec14_k-means_2.jpg", width: 40%),
+  caption: [system pipeline],
+)
+
+~~~~*Second step* : Find the means respectively for all the blue and red dots and move our centroids to the mean points.
+
+#figure(
+  image("images/Lec14_k-means_3.jpg", width: 40%),
+  caption: [system pipeline],
+)
+
+~~~~*Iteratively*, we color the points depending their distances to the new centroids. And again we move centroids to the new mean points.
+
+#figure(
+  image("images/Lec14_k-means_4.jpg", width: 40%),
+  caption: [system pipeline],
+)
+#figure(
+  image("images/Lec14_k-means_5.jpg", width: 40%),
+  caption: [system pipeline],
+)
+
+~~~~To some point, this iteration will stop and the algorithm will converge.
+
+
+\
+\
+
+~~~~We can describe K-means clustering in a mathematical way.
+
+~~~~Given a dataset : $x^((1)), dots, x^((m))$ (unlabeled)
+
+*① Initialize cluster centroids* (usually we don't set them randomly, we just pick $k$ examples in the training set as our initial centroids) :
+$
+  mu_1, dots, mu_k in RR^n
+$
+
+*② Repeat until convergence* :
+
+~~~~(a) Set $c^((i)) = arg min_j ||x^((i)) - mu_j||_2$ (color the points) (we use $cal(l)_2$ norm with or without the square)
+\
+~~~~(b) For $j = 1, dots, h$ ()\
+$
+  mu_j := (sum_(i=1)^m 1{c^((i)) = j} x^((i))) / (sum_(i=1)^m 1{c^((i)) = j})
+$
+
+
+~~~~This algorithm is proved to converge.\
+~~~~If we write that as a _*cost function*_ :
+$
+  cal(J) (c, mu) = sum_(i=1)^m ||x^((i)) - mu_(c^((i)))||^2
+$
+~~~~It's a function of $c$(assignments) and $mu$(centroids).\
+~~~~It turns out that with every iteration, k-means will drive this cost function down. And with the right term $>0$, so this algorithm must converge. Notice that sometimes k-means could be stuck in local minima.
+
+
+
+\
+\
+\
+\
+\
+\
+
+- *Density Estimation*
+
+~~~~*Motivating example* : aircraft engine anomaly detection problem
+
+~~~~Given a vibration and heat value combination, we'd decide whether it is an unusual one.
+
+#figure(
+  image("images/Lec14_GMM_1.jpg", width: 55%),
+  caption: [system pipeline],
+)
+\
+~~~~One way to implement is to model $p(x)$. （直接学一个函数 $p(x)$ 来告诉我们“特征组合 $x$ 出现的密度有多高”。When $p(x) < epsilon$, that means some anomaly.
+\
+
+~~~~What's intersting about the green dot in the graph is that neither its vibration nor heat feature is out of range. However if we look at the combination of these two feature we shall find out the anomaly.
+
+
+
+~~~~If we only look at the data points, it's a "L" shape distribution and we don't have a distribution to directly model this complex distribution.\
+
+~~~~Now we can see it as a *mixture of Guassian distribution*. With the two ellipses as contour lines of two Gaussian distribution（注意二维高斯分布的密度函数的等高线就是一个椭圆）, we can now assume that the data points in the figure are sampled from these two Gaussian distributions（两个椭圆的拼接）.
+#figure(
+  image("images/Lec14_GMM_2.jpg", width: 55%),
+  caption: [system pipeline],
+)
+\
+\
+\
+\
+
+
+- *Guassian Mixture Model* (GMM)
+
+
+
+~~~~Suppose now we have this simple one-dimensional data points :
+
+#figure(
+  image("images/Lec14_GMM_3.jpg", width: 75%),
+  caption: [system pipeline],
+)
+
+~~~~We assume these data come from two Guassian distributions, but we don't know which data points belong to which distribution (unlabeled data).
+\
+~~~~*EM (expectation maximum)* algorithm can help us fit a model despite not knowing which Guassian each example that comes from.
+
+
+
+
+
+- - *Guassian Mixture Model* (GMM) :\
+\
+~~~~我们需要引入一个变量 $z^((i))$ 来表示数据点 $x^((i))$ 来自哪个高斯分布。\
+~~~~Suppose there's a latent random variable $z$, and $x^((i)), z^((i))$ have this joint distribution :
+$
+  P(x^((i)), z^((i))) = P(x^((i)) | z^((i))) P(z^((i)))
+$
+
+where $z^((i))$ is multinomial with some set of parameters $phi.alt$.
+$
+  z tilde "Multinomial"(phi.alt)\
+  z^((i)) in {1, dots, k} "总共" k "种取值可能"\
+  phi.alt >=0 , sum_(j=1)^k phi.alt_j = 1\
+  "the parameter" phi.alt_j "gives" p(z^((i)) = j)
+$
+\
+
+~~~~在我们上面的例子中，我们假设一共有 $k$ 个簇，然后在这些簇里面才会产生数据 $x^((i))$， 我们假设这 $k$ 个簇里面的数据都分别是一个高斯分布：
+
+$
+  x^((i))|z^((i))=j tilde cal(N)(mu_j, Sigma_j)
+$
+
+~~~~因此数据点的产生是这样的：\
+① 先按照概率（此时概率为 $phi.alt_j$）抽到一个 $z^((i))$，其值为 $j$； \
+② 在第 $j$ 个簇的高斯分布中再抽取得到 $x^((i))$
+
+
+
+~~~~最后我们独立地重复以上步骤 $m$ 次得到数据集 ${x^((1)), dots, x^((m))}$
+
+\
+\
+\
+
+~~~~现在我们通过 $P(x^((i)), z^((i)))$ 来间接得到 $P(x)$ 的表达式，有：
+
+$
+  P(x^((i)), z^((i))=j) & = P(x^((i)) | z^((i))) P(z^((i))=j) \
+                        & = P(x^((i)) | z^((i))=j) #h(0.3em) phi.alt_j \
+                        & = phi.alt_j dot cal(N)(x^((i)); #h(0.5em)mu_j, Sigma_j)
+$
+
+~~~~在实际问题中，我们只观测到 $x^((i))$，看不到 $z^((i))$。所以我们需要对 $z^((i))$ 求和，得到 $x^((i))$ 的边缘分布，这也就是我们最后要对原始数据建模的概率分布：
+
+$
+      P(x^((i))) & = sum_(j=1)^k P(x^((i)), z^((i))=j) \
+  <=> P(x^((i))) & = sum_(j=1)^k phi.alt_j dot cal(N)(x^((i)); #h(0.5em)mu_j, Sigma_j)
+$
+~~~~这样，我们相当于就是#text(fill: red)[把 $P(x^((i)))$ 这个最终要建模的概率分布参数化用参数 $phi.alt_j, mu_j, Sigma_j$ 来表示了]。
+
+\
+\
+
+~~~~所以我们只要估计出参数的最优值，那么这个最终建模概率分布就可以计算了。
+
+~~~~The parameters that we have to estimate are :
+$
+  theta = {phi.alt_j , mu_j , Sigma_j}
+$
+\
+
+
+~~~~给定数据点，要估计参数值，我们本能地想到可以用#underline[最大似然估计]，于是我们写出对应的似然函数与对数似然函数：
+
+$
+  "want to" max : cal(L)(theta) = product_(i=1)^m p(x^((i)) ; theta) \
+  <=> max cal(l)(theta) : log (cal(L)(theta)) = sum_(i=1)^m log (p(x^((i)) ; theta))
+$
+
+~~~~注意：最大似然估计实质就是把 $P(x)$ 这个要最终建模的概率分布“参数化”为一个参数 $theta$ 控制的函数族 $P(x; theta)$，然后对这个最大化时候的参数取值就是最后得到的参数的估计值。
+
+~~~~So we want to maximize :
+
+$
+  cal(l)(phi.alt, mu, Sigma) & = sum_(i=1)^m log P(x^((i)) ; phi.alt, mu, Sigma) \
+                             & = sum_(i=1)^m log (sum_(j=1)^k phi.alt_j dot cal(N)(x^((i)); #h(0.5em)mu_j, Sigma_j))
+$
+
+~~~~如果我们对上面这个对数似然函数直接做最大化来求解参数（令导数为0）会发现#underline[无法用闭式解来找到这些参数的最大似然估计。]
+
+\
+~~~~所以后续我们引入 EM 算法来解决这个参数最优化求解问题。
+\
+\
+\
+\
+\
+\
+\
+
+- *$w^((i))$'s Change*
+
+~~~~在上面最开始的 MLE 中我们发现无法直接用闭式解求得最大似然估计，现在我们来看下是什么原因导致没法直接求解？怎样才能求解？
+\
+
+~~~~我们来看有一种情况 ：\
+
+~~~~如果我们已知 $z^((i))$ 的值（也就是我们#text(fill: red)[不仅观测到 $x^((i))$，而且还知道这个属于哪个分量 $z^((i))$]），那么我们就可以把似然函数拆写成下面的形式：
+
+$
+  cal(l)(phi.alt, mu, Sigma) & = sum_(i=1)^m log sum_(z^((i))=1)^k P(x^((i))|z^((i)); mu, Sigma) P(z^((i)); phi.alt) \
+                             & = sum_(i=1)^m [log P(x^((i))|z^((i)); mu, Sigma) + log P(z^((i)); phi.alt)]
+$
+
+~~~~此时 $z^((i))$ 已经确定，不需要再对 $z^((i))$ 从1开始求和到k.
+\
+\
+
+~~~~此时再求解最大似然时，令对 $phi.alt_j, mu_j, Sigma_j$ 的导数均为0，就能很方便解出：
+
+$
+  phi.alt_j = 1/m sum_(i=1)^m 1{z^((i)) = j},\
+  mu_j = (sum_(I=1)^m 1{z^((i)) = j}x^((i))) / (sum_(i=1)^m 1{z^((i)) = j}),\
+  Sigma_j = (sum_(i=1)^m 1{z^((i)) = j}(x^((i)) - mu_j)(x^((i)) - mu_j)^T) / (sum_(i=1)^m 1{z^((i)) = j})
+$
+
+
+
+
+
+~~~~这下我们获得一种启发：既然已知 $z^((i))$ 之后就能轻松求得参数的最大似然估计值，那我们是不是可以引入一种方法来预先为每一个样本 $x^((i))$ 来设定其对应的类别值 $z^((i))$ 这样可能会便于我们求解 ？\
+
+~~~~这样便引出了 EM 算法的核心思想 ： 为每一个样本当前设定一个 “软” 类别值（也就是按照一定的概率值分类到不同类别去）作为当前这一步的“假设”便于这一步作出优化，然后迭代地进入下一步继续通过新的“假设”来更新，最后应该就会收敛到“真实的”最优值。
+
+\
+\
+\
+\
+\
+\
+\
+\
+
+
+- *A quick overview of the EM algorithm*
+\
+- - *E-step : Guess the value of $z^((i))$*
+
+~~~~Set :
+$
+  w^((i))_j = P(z^((i)) = j|x^((i)); phi.alt,mu,Sigma)
+$
+~~~~注意这是一种“软分类”，把每一个样本点按照不同的概率值分到不同的分布中去。（而不是像 k-means 一样每一步迭代中每一个样本点一定有且仅有属于一个分布中）
+\
+\
+
+~~~~And we use Baye's rule which is similar to generative learning algorithm :
+
+$
+  w^((i))_j= (#text(fill: red)[$P(x^((i))|z^((i))=j)$] dot #text(fill: blue)[$P(z^((i))=j)$]) / (sum_(l=1)^k P(x^((i))|z^((i))=l) P(z^((i))=l))
+$
+
+~~~~#text(fill: red)[$P(x^((i))|z^((i))=j)$] comes from Guassian density.\
+~~~~#text(fill: blue)[$P(z^((i))=j)$] comes from our assumption about $z tilde "Multinomial"(phi.alt)$.\
+~~~~The terms at the denominator also comes from Guassian density and $phi.alt$.
+
+
+~~~~We can also write $w^((i))_j$ like this :
+$
+  w^((i))_j = (#text(fill: red)[$cal(N)(x^((i)); mu_j, Sigma_j)$] dot #text(fill: blue)[$phi.alt_j$]) / (sum_(l=1)^k cal(N) (x^((i)); mu_l, Sigma_l) phi.alt_l)
+$
+~~~~We can see that $w^((i))_j$ is dependent on (old) parameters.
+
+~~~~So in E-step, we try to guess each example's $z^((i))$ and we store the probabilities in $w^((i))_j$.（实际上 $w^((i))$ 就是 $z^((i))$ 的后验分布）
+\
+~~~~$w^((i))_j$ : "how much $x^((i))$ is assigned to the $mu_j$ Guassian"
+
+
+\
+\
+\
+
+- - *M-step : use MLE to give estimations of the parameters*
+
+
+
+~~~~Using $w^((i))_j$ and MLE, we can get estimates of the parameters : （注意 $Sigma_j$ 用更新后的 $mu_j$ 算！）
+
+$
+  phi.alt_j = 1/m sum_(i=1)^m w^((i))_j\
+  #text(fill: blue)[$mu_j$] = (sum_(i=1)^m w^((i))_j x^((i))) / (sum_(i=1)^m w^((i))_j)\
+  Sigma_j = (sum_(i=1)^m w^((i))_j (x^((i)) - #text(fill: blue)[$mu_j$])(x^((i)) - #text(fill: blue)[$mu_j$])^top) / (sum_(i=1)^m w^((i))_j)
+$
+
+note that : $w^((i))_j = E[1{z^((i)) = j}]$
+
+~~~~Iteratively, we then update $w^((i))_j$ again and plug in the steps above. ($w^((i))_j$ is dependent on parameters from last time !)
+\
+\
+
+~~~~One intuition about mixture of Guassians model is that it's like a k-means but with a soft assignment. In k-means once we've update the centroids then we each point is assigned to a centroid. But EM uses the probabilities as weights to assign each point to a cluster, then update corresponding means.
+
+
+
+\
+\
+
+
+
+
+- *Rigorous Derivation of EM Algorithm*
+~~~~Now we want to derive EM algorithm rigorously, about why it's reasonable, why it's a MLE algorithm, and why it will converge.
+
+\
+
+- - *Tool : Jensen's Inequality*
+
+~~~~Let $f$ be a convex function (e.g. $f'' > 0$) ;\
+~~~~Let $X$ be a random varaible ;\
+~~~~We have :
+$
+  f(E[X]) <= E[f(X)]
+$
+
+#figure(
+  image("images/Lec14_Jensen-inequality.jpg", width: 50%),
+  caption: [system pipeline],
+)
+
+~~~~Further, if $f'' > 0$ ($f$ is strictly convex), then
+$
+  f(E[X]) = E[f(X)] <=> X "is a constant"
+$
+
+
+~~~~When $f$ is changed from convex to concave, then the whole conclusions will be the opposite way.
+
+~~~~We have a model for $P(x, z; theta)$ ($theta$ is the parameter)\
+~~~~And we only observe $x : {x^((1)), dots, x^((m))}$
+\
+$
+  cal(l)(theta) = sum_(i=1)^m log P(x^((i)); theta)\
+  = sum_(i=1)^m log[sum_(z^((i))) P(x^((i)), z^((i)); theta)]
+$
+
+~~~~Now we want to solve $max_theta cal(l)(theta)$, and we'll derive an algorithm that works iteratively so find the MLE estimate of $theta$.
+（由于 log 里面有一个求和，直接求导没有闭式解。因此我们想找一个下界，通过最大化下界来间接最大化 $cal(l)(theta)$ 并找到对应参数，所以目标思想还是 MLE）
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+- - *EM intuitive geometric steps*
+~~~~Let's draw a picture of this iterative optimization process :
+
+#figure(
+  image("images/Lec14_EM_1.jpg", width: 45%),
+  caption: [system pipeline],
+)
+
+~~~~First, we initialize $theta$ randomly :
+
+#figure(
+  image("images/Lec14_EM_2.jpg", width: 45%),
+  caption: [system pipeline],
+)
+\
+
+*1) E-step* :\
+~~~~We construct a lower bound for this log likelihood curve (green line), which has two properties : ① _lower_ ② it's _equal_ to log-likelihood _at $theta$_
+
+#figure(
+  image("images/Lec14_EM_3.jpg", width: 45%),
+  caption: [system pipeline],
+)
+
+\
+
+*2) M-step* :\
+~~~~Find the value for a new $theta$ that maximizes the green lower bound. We update $theta$ to that new value.
+
+#figure(
+  image("images/Lec14_EM_4.jpg", width: 45%),
+  caption: [system pipeline],
+)
+
+\
+
+~~~~And we find a new lower bound of log-likelihood at $theta$ again and do the update iteratively. Finally it'll converge to a local minimum.
+
+#figure(
+  image("images/Lec14_EM_5.jpg", width: 45%),
+  caption: [system pipeline],
+)
+
+\
+\
+\
+\
+
+
+
+- - *Mathematical Process*
+~~~~Now let's look at mathematical of the process above :
+\
+$
+  "Goal" : & max_theta sum_(i) log P(x^((i)); theta) \
+           & => sum_(i) log sum_(z^((i))) P(x^((i)), z^((i)); theta) \
+           & => sum_(i) log sum_(z^((i))) Q_i (z^((i))) [P(x^((i)), z^((i)); theta) / (Q_i (z^((i))))]
+$
+
+where $Q_i (z^((i)))$ is a probability distribution that : $sum_(z^((i))) Q_i (z^((i))) = 1$
+
+~~~~So it becomes (note that we see the term in square brackets as a function of $z^((i))$, so it ends up as a expectation of $z^((i))$):
+$
+  & => sum_i log E_(z^((i)) tilde Q_i) [P(x^((i)), z^((i)); theta) / (Q_i (z^((i))))]
+$
+
+~~~~Now we use Jensen's inequality (log function is concave !):
+$
+  & => >= sum_i E_(z^((i)) tilde Q_i) [log (P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))))]
+$
+
+~~~~Then we expand it out :
+$
+  & => >= sum_(i) sum_(z^((i))) Q_i (z^((i))) log (P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))))
+$
+\
+
+~~~~So we have :
+$
+  cal(l)(theta) >= sum_(i) sum_(z^((i))) Q_i (z^((i))) log (P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))))
+$
+~~~~Note that the expression on the right is a function of $theta$ ! ($x^((i))$ is data and we take the sum over $z^((i))$) Then it can serve as the lower bound of $cal(l)(theta)$ !!!
+
+\
+
+~~~~Don't forget that we want the lower bound is equal to $cal(l)(theta)$ at the current $theta$.
+\
+
+~~~~On a given iteration of EM (with parameter $theta$), *we want Jensen’s inequality to attain equality here* :
+
+$
+  sum_i log E_(z^((i)) tilde Q_i) [P(x^((i)), z^((i)); theta) / (Q_i (z^((i))))] &= sum_i E_(z^((i)) tilde Q_i) [log (P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))))]\
+  <=> log E_(z^((i)) tilde Q_i) [P(x^((i)), z^((i)); theta) / (Q_i (z^((i))))] &= E_(z^((i)) tilde Q_i) [log (P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))))]
+$
+
+~~~~For this to hold :
+
+$
+  P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))) = "constant" #h(1em) (forall z^((i)))
+$
+
+~~~~So we can set :
+$
+  Q_i (z^((i))) prop P(x^((i)), z^((i)); theta)
+$
+
+~~~~Remember that $Q_i$ is a probability distribution we choose for $z^((i))$, so we can simply set :
+
+$
+  Q_i (z^((i))) & = P(x^((i)), z^((i)); theta) / (sum_(z^((i))) P(x^((i)), z^((i)); theta)) \
+                & = P(z^((i)) | x^((i)); theta)
+$
+$
+  "note that" sum_(z^((i))) P(x^((i)), z^((i)); theta) = P(x^((i)))
+$
+(this is the *_posterior probability_*)
+
+\
+\
+\
+
+
+- - *Summary*
+
+*E-step* : \
+
+~~~~Set
+$
+  Q_i (z^((i))) = P(z^((i)) | x^((i)); theta)
+$
+(note that previously we set $w^((i))_j$ which is now in our distribution $Q_i$)
+
+\
+*M-step* :
+$
+  theta := arg max_theta sum_(i) sum_(z^((i))) Q_i (z^((i))) log (P(x^((i)), z^((i)); theta) / (Q_i (z^((i)))))
+$
+(we find the maximum point of our lower bound and update $theta$ to that point !)
+\
+\
+\
+\
+
+\
+\
+\
+
+#rect[
+  ~~~~#text(
+    fill: red,
+  )[*So now we know that EM algorithm is a maximum likelihood estimation algorithm with optimization solved by constructing lower bounds and optimizing lower bounds.*]
+]
+
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
+*1. Proof of K-Means' Convergence*
+\
+
+~~~~我们之前在 k-means 处定义的损失函数是 (distortion function):
+$
+  cal(J)(c, mu) = sum_(i=1)^m ||x^((i))-mu_(c^((i)))||^2
+$
+~~~~It's the sum of squared distances between each training example $x^((i))$ and the cluster centroid $mu_(c^((i)))$ to which it has been assigned.
+\
+
+~~~~显然，$cal(J)(c, mu)>=0$，所以我们只需要证明 k-means 的每一次迭代都会让这个损失函数严格下降即可，单减有下界的函数一定收敛！\
+
+~~~~K-means 中参数分为两部分，一部分是 $c^((i))$ 表示当前第 $i$ 个样本 $x^((i))$ 被分配给哪个簇；另一部分是 $mu_(j)$ 表示第 $j$ 个簇的位置。K-means 目标就是选取最优的这两组参数，让 distortion function 最小化。
+\
+
+~~~~既然有两组参数需要优化，k-means 采取的是坐标优化法(coordinate descent) ：#underline[每次固定其他变量，只优化其中一个变量（或一组变量），使目标函数下降。]
+
+~~~~于是，在内循环中“内循环做的是：\
+① 固定 $mu$，优化 $c$ ：对于每一个样本选取最合适的分类标签\
+② 固定 $c$，优化 $mu$ ：由于此时各个簇之间相互独立，因此所以可以分别对每个 $mu_j$​ 最小化，即选取各个簇内的质心即可。
+\
+
+~~~~由于内循环中每一步都是精确的单减优化，因此损失函数不会增加。
+
+\
+\
+\
+
+Notice : \
+~~~~① 虽然 $cal(J)$ 会收敛，但严格来说，$c$ 和 $mu$ 不一定收敛到唯一值，理论上可能出现：算法在几个不同的聚类结果之间来回跳，但这些结果的 $cal(J)$ 完全相同。但实际中一般不会出现这种情况。\
+~~~~② $cal(J)$ 非凸，所以收敛到的是局部最优，不保证全局最优。
+
+
+
+
+
+
+
+
+
+
+
+2. *Detailed Calculus in EM steps* :
+\
+
+*1) . Why no closed form solution in MLE : ?*
+
+$
+  cal(l)(phi.alt, mu, Sigma) & = sum_(i=1)^m log P(x^((i)) ; phi.alt, mu, Sigma) \
+                             & = sum_(i=1)^m log (sum_(j=1)^k phi.alt_j dot cal(N)(x^((i)); #h(0.5em)mu_j, Sigma_j))
+$
+
+
+① *定义后验责任度*
+$
+  w^((i))_j = P(z^((i))=j|x^((i)); phi.alt, mu, Sigma)
+  = (phi.alt_j N(x^((i)); mu_j, Sigma_j)) / (sum_(l=1)^k phi.alt_l N(x^((i)); mu_l, Sigma_l)).
+$
+表示在当前参数下，第 $i$ 个样本属于第 $j$ 个高斯分布的概率
+
+② *对 $mu_j$ 求偏导*
+
+$
+  partial / (partial mu_j) log cal(N)(x; mu_j, Sigma_j) = Sigma_j^(-1) (x - mu_j).
+$
+
+$
+  => (partial ell) / (partial mu_j) = sum_(i=1)^m w^((i))_j Sigma_j^(-1) (x^((i)) - mu_j) = 0.
+$
+
+因为 $Sigma_j^(-1)$ 可逆，得到
+$
+  sum_(i=1)^m w^((i))_j (x^((i)) - mu_j) = 0,
+$
+$
+  => mu_j = (sum_(i=1)^m w^((i))_j x^((i))) / (sum_(i=1)^m w^((i))_j).
+$
+
+
+③ *对 $Sigma_j$ 求导*
+
+高斯对数密度对 $Sigma_j$ 的矩阵导数为
+$
+  partial / (partial Sigma_j) log N(x; mu_j, Sigma_j)
+  = -1/2 Sigma_j^(-1) + 1/2 Sigma_j^(-1) (x - mu_j)(x - mu_j)^top Sigma_j^(-1).
+$
+
+令导数为零，得 ：
+$
+  Sigma_j = (sum_(i=1)^m w^((i))_j (x^((i)) - mu_j)(x^((i)) - mu_j)^top) / (sum_(i=1)^m w^((i))_j).
+$
+
+\
+\
+
+④ *对 $phi.alt_j$ 求导*
+
+由于这个概率值变量自带归一化约束 $sum_(j=1)^k phi.alt_j = 1$，用拉格朗日乘子可得
+$
+  phi.alt_j = 1/m sum_(i=1)^m w^((i))_j.
+$
+
+
+⑤ 为什么得不到闭式解？
+
+上面得到三个驻点方程：
+$
+  mu_j = (sum_i w^((i))_j x^((i))) / (sum_i w^((i))_j),\
+  Sigma_j = (sum_i w^((i))_j (x^((i)) - mu_j)(x^((i)) - mu_j)^top) / (sum_i w^((i))_j),\
+  phi.alt_j = 1/m sum_i w^((i))_j.
+$
+
+但关键问题是：
+$
+  w^((i))_j = (phi.alt_j N(x^((i)); mu_j, Sigma_j)) / (sum_(l=1)^k phi.alt_l N(x^((i)); mu_l, Sigma_l))
+$
+本身依赖于所有待估参数 $phi.alt, mu, Sigma$。
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+~~~~因此这些方程不是显式解，而是关于 $phi.alt, mu, Sigma$ 的非线性隐式耦合方程组。不能像完全数据情形那样，直接一步算出 $mu_j, Sigma_j, phi.alt_j$。
+
+~~~~更准确地说：
+不是数学上证明了绝对不存在任何闭式表达式，而是直接对观测似然求导得到的驻点方程是隐式的，#underline[无法通过有限步初等运算显式解出]。因此通常说 GMM 的 MLE 没有闭式解。这也说明为什么只能用迭代化算法来做
+
+
+
+
+
+
+
+
+*2 ) .*  为什么我们发现上面第一个问题中我们求偏导得到的驻点问题的方程其实就是我们在 EM 算法中 M-step 使用的更新公式 ？ 两者为什么长得一摸一样 ？
+
+解释 ：\
+
+*① *首先长得一样但是含义不一样：\
+
+~~~~驻点方程中 $w^((i))_j$ 依赖于正在被优化的参数 $phi.alt, mu, Sigma$，而这些参数里面又含 $w^((i))_j$ ，所以属于隐式耦合关系，无法解出；\
+
+~~~~而在 M-step 中 $w^((i))_j$ 先由旧参数算出，而后作为一个常量去更新 $phi.alt, mu, Sigma$ 参数，这是两个步骤，所以可以用迭代方法不断更新收敛到最优值
+\
+\
+
+*②* 事实上二者是统一的 ：
+
+由于
+$
+  cal(l)(theta) = sum_(i=1)^m log P(x^((i)); theta)
+$
+
+$
+  (partial ell) / (partial theta) &= sum_(i=1)^m 1 / P(x^((i)); theta) dot partial / (partial theta) P(x^((i)); theta)\
+  &= sum_(i=1)^m 1 / P(x^((i)); theta)
+  sum_(z^((i))) partial / (partial theta) P(x^((i)), z^((i)); theta)\
+  &= sum_(i=1)^m 1 / P(x^((i)); theta)
+  sum_(z^((i))) P(z^((i))|x^((i)); theta)
+  dot 1 / P(z^((i))|x^((i)); theta)
+  dot partial / (partial theta) P(x^((i)), z^((i)); theta)\
+  &= sum_(i=1)^m sum_(z^((i))) P(z^((i))| x^((i)); theta) dot 1 / (P(x^((i)), z^((i)); theta)) dot (partial P(x^((i)), z^((i)); theta)) / (partial theta)\
+  &= sum_(i=1)^m sum_(z^((i))) P(z^((i))| x^((i)); theta)
+  dot partial / (partial theta) log P(x^((i)), z^((i)); theta).
+$
+
+
+~~~~这个式子就是在说 ：
+
+#rect[
+  观测数据对数似然的梯度 = 以 $P(z(i) | x(i);θ)$（也即是 $w^((i))_j$）为权重，对完全数据对数似然的梯度做加权平均
+]
+
+
+~~~~这样我们就在 “无闭式解”（直接对观测数据求偏导得到不可解的隐式耦合方程） 与 EM Algo（用后验责任度 $w^((i))_j$ 对完全数据对数似然做加权，然后求导） 之间建立了联系，所以会发现最后的式子形式上居然是一样的 ！
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
+
+
 
 
 
