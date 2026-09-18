@@ -6368,9 +6368,645 @@ $
 
 
 
+
+
 #pagebreak()
 
 
+
+
+
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XV]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Factor Analysis Model
+\
+
+outline :
+- EM convergence
+- Guassians properties
+- Factor Analysis Model
+- EM steps for factor analysis model
+
+\
+\
+
+=== 1. EM Convergence
+\
+~~~~Recall that in E-step, we compute (posterior) （这个是我们最后得到结论之后的做法，即将 $Q_i$ 分布选取为后验概率）:
+$
+  w^((i))_j = Q_i (z^((i))=j) = P(z^((i))=j | x^((i)); #h(0.5em)phi.alt, mu, Sigma)
+$
+
+~~~~Then for the M-step, we do this maximization :
+$
+  max_(phi.alt, mu, Sigma) sum_i sum_(z^((i))) Q_i (z^((i))) log (P(x^((i)), z^((i)); phi.alt, mu, Sigma)) / (Q_i (z^((i))))
+$
+
+~~~~注意：$Q_i (z^((i)))$（即 $w^((i))$）是后验概率；而 $P(z^((i)) = j) = phi.alt_j$ 是先验概率
+
+~~~~代入 GMM 具体形式，上式可再写为：
+$
+  &=> max_(phi.alt, mu, Sigma) sum_i sum_(z^((i))) Q_i (z^((i))) log (P(x^((i)) | z^((i))) P(z^((i)))) / (Q_i (z^((i))))
+  \
+  &=> max_(phi.alt, mu, Sigma) sum_i sum_(j=1)^k w^((i))_j log (cal(N)(x^((i)) ; mu_j, Sigma_j) dot phi.alt_j) / w^((i))_j
+$
+
+
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Another equivalent view of EM *:
+
+
+~~~~Define :
+$
+  J(theta, Q) = sum_i sum_(z^((i))) Q_i (z^((i))) log (P(x^((i)), z^((i)); phi.alt, mu, Sigma)) / (Q_i (z^((i))))
+$
+
+~~~~We know that
+$
+  ell(theta) >= J(theta, Q) #h(1em) forall theta, Q
+$
+
+#rect[
+  So this view of EM :\
+  ~~~~① E-step : maximize $J$ with respect to $Q$\
+  ~~~~② M-step : maximize $J$ with respect to $theta$
+]
+
+~~~~This method is also *coordinate ascent* !\
+~~~~It turns out that in E-step, we'll choose $Q$ that makes $ell(theta) = J(theta, Q)$ （最后结论：最优的 $Q_i$ 选择就是后验分布）; then in M-step we'll choose $theta$ that maximizes $J(theta, Q)$.
+
+\
+\
+
+~~~~所以这是与 EM 应用于 GMM 除了 Jensen's inequality 之外的另一种等价视角，即将 EM 算法视为坐标上升法的优化框架。并且在这个视角下回答了为什么 EM 算法会收敛 ？因为：
+$
+  ell(θ^(t+1))≥J(theta^(t+1), Q^t)≥ J(theta^t, Q^t)=ℓ(theta^t)
+$
+~~~~所以每一次参数优化从 $theta^t -> theta^(t+1)$ 都会将 $ell(theta)$ 上升，而这个函数应当是有上界的（这一点尚待说明严谨），故单增有上界必然会收敛。
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+=== 2. Problem with GMM
+\
+$e.g^1$ :\
+~~~~We have a 2-dimensional feature dataset, and 100 data points. So we can fit mixture Guassians.
+
+
+#figure(
+  image("images/Lec15_GMM_fit_eg.jpg", width: 55%),
+  caption: [GMM fit e.g.],
+)
+
+($"examples" > "feature dimension"$)
+
+
+
+
+
+~~~~Where we'd not use mixture of Guassian but factor analysis is when *$m approx n$ or $m<<n$* ($n$ is the feature dimension, and $m$ is the number of examples)
+\
+\
+\
+\
+\
+\
+
+- *What's wrong with single Guassian model ?*
+\
+*1 ) *
+~~~~In this case, we try to model single Guassian distribution ：
+$
+  x tilde cal(N)(mu, Sigma)
+$
+~~~~When we do MLE in this case :
+$
+  mu = 1/m sum_(i=1)^m x^((i))\
+  Sigma = 1/m sum_(i=1)^m (x^((i)) - mu) (x^((i)) - mu)^T
+$
+
+~~~~$Sigma$ 是 $m$ 个中心化向量的外积之和，这 $m$ 个向量张成的空间维度最大为 $m$.
+
+~~~~Thus if $m<=n$, the covariance matrix would be singular (non-invertible) ($"rank " <= m < n$).
+\
+
+~~~~If we take a look at the Guassian density formula :
+$
+  1/((2 pi)^(n/2) |Sigma|^(1/2)) exp(-(...) Sigma^(-1)(...)...)
+$
+~~~~$|Sigma| = 0$ and $Sigma^(-1)$ doesn't exist.
+\
+\
+
+~~~~For a simple example to illustrate this : $ m=2, n=2 $
+
+#figure(
+  image("images/Lec15_GMM_fit_problem_eg.jpg", width: 55%),
+  caption: [GMM fit problem],
+)
+
+~~~~If we draw the Guassian contour in this case, it'll be a infinitely thin line. (actually we've fit a line to that)
+
+
+\
+\
+
+*2 )* ~~~~Another simple example to lead in :
+
+~~~~Suppose we have a dataset of 30 persons, but we're gonna measure 100 psychological attributes and model $p(x)$.(now $x in RR^100$)
+
+
+
+~~~~既然直接拟合单个高斯分布不行（因为协方差矩阵奇异的原因），那么我们拟合 GMM （多个高斯混合分布）显然更加不可行。那能否对协方差矩阵加一些限制让我们能够拟合出单个高斯分布呢 ？
+
+
+\
+
+- - *Option 1* : *constrain $Sigma$ to be diagonal* :
+
+$
+  Sigma = mat(sigma^2_1, dots, 0; 0, sigma^2_2, dots; dots.v, dots.v, sigma_n^2)
+$
+
+~~~~Actually this corresponds to constraining the Guassian to have axes align contours（高斯分布的等高线是轴对齐的椭圆）.
+\
+
+~~~~After MLE, we'll get:
+$
+  sigma^2_j = 1/m sum_i (x^((i))_j - mu_j)^2
+$
+
+~~~~Now $Sigma$ only has $n$ entries.
+\
+~~~~However, the problem with it is that *this modeling constraint assumes that all of the features are uncorrelated, which is not reasonable*.（会导致模型欠拟合）
+
+\
+\
+\
+
+- *Option 2* : *constrain $Sigma = sigma^2 I$*
+
+~~~~Now it only has one parameter.\
+~~~~And then the MLE result is :
+$
+  sigma^2 = 1/m 1/n sum_i sum_j (x^((i))_j - mu_j)^2
+$
+
+~~~~这个限制不仅假设各特征相互独立，而且各自的方差还相等，这无疑是更不合理的。但这可以引出 factor analysis 的核心思路。
+\
+
+
+~~~~以上这个 Option 2 对应的模型假设是 :
+$
+  x tilde cal(N)(mu, Sigma)\
+  => x = mu + epsilon, #h(1em) epsilon tilde cal(N)(0, sigma^2 I)
+$
+~~~~这个假设意味着数据在所有维度上的变化都是等价的、独立的，#underline[即这个变化完全依赖于噪声]，但这个假设太强，不合理。\
+\
+\
+\
+\
+~~~~一种自然的想法是：如果数据的变化并不是完全取决于噪声，而也同样来自于一种共同的隐藏因素？这个因素不是噪声，而是一个真实的、结构性的变化来源。
+
+\
+\
+~~~~于是，在后续我们会把生成模型改成：
+$
+  x = mu + underbrace(Lambda z, "结构部分") + underbrace(epsilon, "噪声")
+$
+~~~~其中：
+- $z in RR^d$：低维潜在因子，驱动数据的共同变化；
+- $Lambda$：把低维因子映射到高维观测；
+- $epsilon tilde N(0, Psi)$：每个维度独立的噪声。
+
+\
+
+
+#rect[
+  ~~~~*Insight* ：事实上这与矩阵的低秩分解紧密相关，也就是低维数据驱动得到的高维观测，这也对应着参数个数的减少。\
+  ~~~~FA 模型中低秩分解最直观的观察就在协方差矩阵的变化中：
+  $
+    Σ= Lambda Lambda^T + Psi
+  $
+  ~~~~其中 $Lambda Lambda^T => RR^(n times d) times RR^(d times n)$ 就是一个低秩分解！
+]
+\
+
+~~~~What factor analysis wants to do is to capture some correlation but doesn't run into the invertibility which naive Guassian model does.
+
+
+\
+\
+\
+\
+\
+\
+
+
+
+
+
+=== 3.  *Factor Analysis Model*
+\
+- *frame work*
+
+$
+  P(x, z) = P(x | z) P(z)\
+  z "is latent"
+$
+
+$
+  z tilde cal(N)(0, I), z in RR^d, (d<n)\
+  x|z tilde cal(N)(mu + Lambda z, Psi)
+$
+~~~~模型骨架与 GMM 一样，是与生成式模型相同的框架。
+
+\
+~~~~以下则是 factor analysis model 建模的核心不同处：\
+\
+
+- *Assumptions*
+~~~~In factor analysis model, additionally, we have these parameters :
+$
+  mu in RR^n, Lambda in RR(n times d), Psi in RR^(n times n) ("diagonal")
+$
+
+~~~~And we model $x$ in another way :
+*$ & x = mu + Lambda z + epsilon("Guassian noise") \
+& z tilde cal(N)(0, I), #h(1em) epsilon tilde cal(N)(0, Psi) $*
+~~~~或者可以等价地写为 ：
+$
+  x|z tilde cal(N)(mu + Lambda z, Psi)
+$
+
+#rect[
+  ~~~~Intuitions about this modeling :\
+  #text(
+    fill: red,
+  )[① We believe there're $d$ main factors that drive the value of $x$, so $x$ is a linear function of $z (in RR^d)$.\
+    ② Noises oberved on all examples $x$ are independent, so we set $Psi$ to be a diagonal matrix.
+  ]]
+
+
+\
+\
+\
+\
+
+
+- - 补充：两种模型参数个数比较
+~~~~① 此时 factor analysis model 的参数个数 :
+$
+  O(mu + Lambda + Psi) & = O(n + n d + n) \
+                       & => O(n d)
+$
+
+~~~~② 回顾一下 GMM 的参数个数 :
+
+$
+  phi.alt_j in RR (j = 1, dots, k) "但概率值满足归一化"; \
+  mu_j in RR^(n) (j = 1, dots, k);\ Sigma_j in RR(n times n) (j = 1,dots, k) "且对称"
+$
+
+~~~~所以 GMM 总参数个数为
+$
+  O(phi.alt + mu + Sigma) & = O((k-1) + n k + k dot (n (n+1)) / 2) \
+                          & = O(k n^2)
+$
+
+~~~~直观比较之后显然 factor analysis model 总的自由参数个数比 GMM 少很多
+
+
+
+
+
+
+
+
+- *An Illustration Example*
+
+~~~~用一个简单的典例展示 factor analysis model 中 #underline[“高维数据其实落在低维子空间附近”]这一核心思想。
+
+~~~~Suppose :
+$
+  x in RR^2 (n=2) , z in RR^1 (d = 1), "and" m = 7
+$
+
+\
+~~~~Since here $z tilde N(0, 1)$, we first sample 7 $z$'s out on the axis :
+
+#figure(
+  image("images/Lec15_Guassian_sample-z.jpg", width: 60%),
+  caption: [$z$'s sampled from a Guassian],
+)
+
+~~~~Say :
+$
+  Lambda = mat(2; 1), mu = mat(0; 0)
+$
+
+~~~~Now the linear function is :
+$
+  x & = mu + Lambda z \
+    & = mat(0; 0) + mat(2; 1) z
+$
+
+~~~~So without the Guassian noise $epsilon$, $x$'s are gonna be fit on a line :
+
+#figure(
+  image("images/Lec15_x_without_noise.jpg", width: 60%),
+  caption: [$x$'s without Guassian noises],
+)
+
+~~~~Now say :
+$
+  Psi = mat(1, 0; 0, 2)
+$
+which means that $x_2$ has higher noice variance than $x_1$.
+
+
+~~~~Then, we add Guassian noise $epsilon$ :
+$
+  x = mu + Lambda z + epsilon
+$
+
+~~~~It corresponds to adding a Guassian contour on each $x$.
+
+#figure(
+  image("images/Lec15_actual_sample_x.jpg", width: 60%),
+  caption: [actual sampled $x$'s ],
+)
+
+~~~~Then we sample from these Guassians and get the the red crosses as a typical example drawn from this model.
+
+~~~~*So here we let $n=2, d = 1$, which means we have two-dimensional data, but most of the data lies on a one-dimensional subspace (with little noises).*
+
+~~~~When we have such high-dimensional data in a such small dataset, we can't fit very complex models through it. So it may be reasonable to fit them in a subspace.
+
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Properties of Multivariate Guassians*
+\
+
+$
+  x = mat(x_1; ——; x_2) in RR^(r+s) , x_1 in RR^r, x_2 in RR^s
+$
+
+~~~~If $x tilde cal(N)(mu, Sigma)$,
+$
+  mu = mat(mu_1; ——; mu_2) in RR^(r+s), mu_1 in RR^r, mu_2 in RR^s
+$
+$
+  Sigma = mat(Sigma_(11), Sigma_(12); Sigma_(21), Sigma_(22)), Sigma_(11) in RR^(r times r), Sigma_(22) in RR^(s times s)
+$
+
+\
+
+
+- - *1 ) Marginal Probability*
+
+$P(x_1) = ?$
+$
+       P(x) & = P(x_1, x_2) \
+  => P(x_1) & = integral_(x_2) P(x_1, x_2) d x_2 \
+            & = integral_(x_2) P(x) d x_2
+$
+
+~~~~Then we plug in the Guassian probability density of $P(x)$ :
+$
+  =integral_(x_2) 1 / ((2 pi)^(n/2) |Sigma|^(1/2)) exp(-1/2 mat(x_1 - mu_1; x_2 - mu_2)^T mat(Sigma_(11), Sigma_(12); Sigma_(21), Sigma_(22))^(-1) mat(x_1 - mu_1; x_2 - mu_2))
+$
+
+~~~~Then we do the integration with respect to $x_2$. We'll find :
+$
+  x_1 tilde cal(N)(mu_1, Sigma_(11))
+$
+
+\
+\
+
+- - *2 ) Conditional Probability*
+
+$P(x_1 | x_2) = ?$
+
+$
+  P(x_1 | x_2) & = P(x_1, x_2) / P(x_2) \
+               & = P(x) / P(x_2)
+$
+
+~~~~It turns out that it also follows a Guassian distribution.
+$
+  => x_1|x_2 tilde cal(N)(mu_(x_1|x_2), Sigma_(x_1|x_2))
+$
+$
+  "with" : mu_(x_1|x_2) & = mu_1 + Sigma_(12) Sigma^(-1)_(22)(x_2 - mu_2) \
+        Sigma_(x_1|x_2) & = Sigma_(11) - Sigma_(12) Sigma_(22)^(-1) Sigma_(21)
+$
+
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Derivation of EM algorithm for Factor Analysis Model*
+\
+
+- - *Preparations* :\
+
+~~~~Apply the properties of multivariate Guassian to facor analysis model.\
+
+~~~~Derive the joint distribution : $P(x, z)$
+
+$
+  mat(z; x) tilde cal(N)(mu_(x,z), Sigma_(x, z))\
+  z tilde cal(N)(0, I) in RR^(d),#h(1em) epsilon tilde cal(N)(0, Psi) in RR^(n)\
+  x = mu + Lambda z + epsilon #h(1em) in RR^(n)
+$
+
+~~~~We can derive that :
+$
+  E[x] = mu in RR^(n) => mu_(x, z) = mat(arrow(0); mu) in RR^(d + n)
+$
+
+~~~~Similarly, we can get :
+$
+  Sigma_(x,z) = mat(Sigma_(z z), Sigma_(z x); Sigma_(x z), Sigma_(x x))
+$
+
+where :
+$
+  Sigma_(z z) & = "Cov"(z) = I; \
+  Sigma_(z x) & = E[(z - E[z])(x - E[x])^T] = E[z(Lambda z + epsilon)^T] \
+              & = E[z z^T]Lambda^T + E[z epsilon^T] = Lambda^T \
+  Sigma_(x z) & = Lambda \
+  Sigma_(x x) & = E[(x - E[x])(x - E[x])^T] \
+              & = E[(Lambda z + epsilon)(Lambda z + epsilon)^T] \
+              & = E[Lambda z z^T Lambda^T + epsilon z^T Lambda^T + Lambda z epsilon^T + epsilon epsilon^T] \
+              & = Lambda Lambda^T + Psi
+$
+
+~~~~So we get :
+$
+  Sigma_(x, z) = mat(I, Lambda^T; Lambda, Lambda Lambda^T+Psi)
+$
+
+*$ mat(z; x) tilde cal(N)(mat(arrow(0); mu), mat(I, Lambda^T; Lambda, Lambda Lambda^T+Psi)) $*
+
+~~~~Now we can write down $P(x)$ (it's this Guassian density) and try to take the derivative of the log likelihood with respect to each parameter and will find out that there's no closed form solutions.
+
+\
+
+
+~~~~So in order to fit the parameters, we'll resort to EM algorithm.
+
+\
+\
+\
+\
+\
+- - *E-step*
+
+~~~~We'd compute :
+$
+  Q_i (z^((i))) = P(z^((i)) | x^((i)); theta)
+$
+
+~~~~*When we're fitting a mixture of Guassian distributions, $z^((i))$ was discrete. But in this case, $z^((i))$ is a continous density*.
+
+~~~~It turns out that we can use the conditional probablity density to represent this continous density.
+
+$
+  z^((i))|x^((i)) tilde cal(N)(mu_(z^((i))|x^((i))), Sigma_(z^((i))|x^((i))))
+$
+
+~~~~Again we apply the previously derived properties :
+
+$
+     mu_(z^((i))|x^((i))) & = mu_z + Sigma_(z x) Sigma_(x x )^(-1)(x^((i)) - mu_x) \
+                          & =arrow(0) + Lambda^T (Lambda Lambda^T + Psi)^(-1) (x^((i)) - mu) \
+  Sigma_(z^((i))|x^((i))) & = Sigma_(z z) - Sigma_(z x) Sigma_(x x)^(-1) Sigma_(x z) \
+                          & = I - Lambda^T (Lambda Lambda^T + Psi)^(-1) Lambda
+$
+
+~~~~So in E-step we'd compute these, and store them as varibales and represent $Q_(i)$ as a Guassian density. （E-step 完成后，我们得到每个样本 $x^((i))$ 对应的后验高斯分布）
+
+\
+\
+\
+\
+\
+\
+
+- - *M-step*
+
+$
+  theta & = arg max_theta sum_i integral_(z^((i))) Q_i (z^((i))) log P(x^((i)), z^((i))) / (Q_i (z^((i)))) d z^((i)) \
+     => & =sum_i E_(z^((i)) tilde Q_i) [log P(x^((i)), z^((i))) / (Q_i (z^((i))))]
+$
+
+~~~~For the nominator and denominator we'd plug in the Guassian density. (usually when there's a $log$ ahead, we'd plug in the Guassian density)
+\
+~~~~After the plugging, this'll be a quadratic expression, and we'll take derivatives to find out the parameters.
+
+
+\
+\
+\
+
+
+~~~~与 GMM 类似，factor analysis model 所应用的 EM 算法同样也是一个坐标上升法。固定 $J(theta, Q)$ 之后先在 E-step 固定 $theta$ 优化 $Q$，再在  M-step 固定 $Q$ 来选取最优化的参数 $theta$
+
+\
+
+
+
+
+
+#table(
+  columns: (auto, auto, auto),
+  align: (left, left, left),
+  stroke: 0.5pt,
+  inset: 8pt,
+  table.header([对比项], [GMM], [因子分析]),
+  [模型框架], [生成式模型骨架], [生成式模型骨架],
+  [隐变量 $z$], [#text(fill: red)[discrete] : $z in {1, dots, k}$], [#text(fill: red)[continuous] : $z in RR^d$],
+  [$z$ 含义], [簇标签], [低维潜在因子],
+  [先验 $P(z)$], [$P(z=j) = phi_j$], [$z tilde N(0, I)$],
+  [条件分布 $P(x | z)$], [$x|z=j tilde N(mu_j, Sigma_j)$], [$x|z tilde N(mu + Lambda z, Psi)$],
+  [边缘分布 $P(x)$],
+  [混合高斯 ：$sum_(j=1)^k phi.alt_j \ N(mu_j, Sigma_j)$],
+  [单个高斯 ：$N(mu, Lambda Lambda^top + Psi)$],
+
+  [EM 步骤], [① 算后验概率 $w^((i))_j$ ② 进行加权 MLE], [① 算出后验高斯分布 ② 再对高斯期望求导],
+  [建模目标], [聚类、密度估计], [降维、高维小样本密度估计],
+)
+
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
 
 
 
