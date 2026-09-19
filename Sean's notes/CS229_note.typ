@@ -7019,6 +7019,61 @@ $
 
 
 
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XVI]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
 
+== Principal Component Analysis & Independent Component Analysis
+\
+
+=== 1.
+
+~~~~Recall that factor analysis model tries to model $P(x)$ which is in a high-dimensional space. However, PCA is not a probablistic and it doesn't model $P(x)$, but it still allows you to figure out whether the data is in a low-dimensional space.
+
+\
+
+- Example
+
+~~~~We have an unlabeled dataset : ${x^((1)), dots, x^((m))} in RR^(n)$. We want to reduce the dimension from $n$ to $k$, $k<<n$.
+\
+
+~~~~比如说我们有一个 inch - centimeter 的二维数据集，由于长度单位之间是可以转换的，
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
 
 
