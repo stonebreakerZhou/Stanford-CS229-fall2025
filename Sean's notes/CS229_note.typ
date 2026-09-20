@@ -7027,7 +7027,7 @@ $
   ]
 ]
 
-== Principal Component Analysis & Independent Component Analysis
+== Principal Component Analysis & Independent Component Analysis (partial)
 \
 
 === 1.
@@ -7041,36 +7041,319 @@ $
 ~~~~We have an unlabeled dataset : ${x^((1)), dots, x^((m))} in RR^(n)$. We want to reduce the dimension from $n$ to $k$, $k<<n$.
 \
 
-~~~~比如说我们有一个 inch - centimeter 的二维数据集，由于长度单位之间是可以转换的，
+~~~~比如说我们有一个 inch - centimeter 的二维数据集，由于长度单位之间是可以转换的，因此这个数据集实际上应当处于一个低维子空间。
+
+#figure(
+  image("images/Lec16_PCA_eg1_dataset.jpg", width: 80%),
+  caption: [PCA $e.g^1$ dataset],
+)
+
+~~~~PCA 算法要做的事情就是找到图中那个倾斜的维度方向，那也是数据变化的主轴。并且在与之正交的维度上只会存在一些噪声。当我们把数据投影到这根轴上，二维数据就会变为一维数据。
+
+\
+\
+
+- Pre-processing
+\
+~~~~Before PCA, we're gonna process our data :
+
+① Zero out mean :
+$
+       mu & = 1/m sum_(i=1)^m x^((i)) \
+  x^((i)) & <- x^((i)) - mu
+$
+
+\
+
+② Standardize variance to 1 :
+$
+  sigma^2_j & = 1/m sum_(i=1)^m (x^((i))_j)^2 \
+  x^((i))_j & <- x^((i))_j / sigma_j
+$
+
+\
+
+- PCA illustration & intuition
+
+~~~~If we've got this dataset after pre-processing :
+
+#figure(
+  image("images/Lec16_PCA_pre-processed_dataset.jpg", width: 60%),
+  caption: [pre-processed dataset],
+)
+
+~~~~It looks like that the green line is a pretty good variation axis (the one-dimensional subspace) for the given dataset. Intuitively, the red line is a bad subspace.
+
+~~~~Why ?
+\
+
+~~~~Reason 1 : 如果我们把所有数据点分别（正交）投影到绿线和红线上面，可以看到所有数据点到绿线的距离的平方和应当是很小的。这可能是定义 PCA 方法的一种方式。
+\
+
+~~~~Reason 2 : 如果我们仅在绿/红两线上看投影点之间的位置关系，我们可以看到绿线上投影点之间相隔较远，而红线上的投影点之间挤成一团。所以我们或许可以这样定义 PCA ：找到一个子空间，数据点投影到子空间上后尽可能保持分散，这样能保留更多的数据变异性。
+
+\
+
+~~~~事实上，上面两种直觉在数学上是等价的。
+
+#figure(
+  image("images/Lec16_PCA_intuition_illustration.jpg", width: 60%),
+  caption: [PCA intuition],
+)
+
+
+~~~~If $||u|| = 1$, then the projection of $x^((i))$ onto $u$ is :
+$
+  "Prj" = u^T x^((i))
+$
+
+~~~~In PCA, we want to choose $u$ to maximize :
+$
+    & max_(u: ||u||=1) 1/m sum_(i=1)^m ( x^((i)T) u)^2 \
+  = & max_(u: ||u||=1) 1/m sum_(i=1)^m u^T x^((i)) x^((i) T) u \
+  = & max_(u : ||u||=1) u^T (1/m sum_(i=1)^m x^((i)) x^((i)T)) u
+$
+
+~~~~Note that the covariance matrix for $x$ is $Sigma_(x x)$
+
+$
+  max_(u : ||u|| = 1) u^T Sigma_(x x) u
+$
+
+~~~~If we do the maximization, it turns out that *$u$ is principal eigenvector of $Sigma_(x x)$*. （注意，由于 $Sigma_(x x)$ 是对称的，所以其有一组正交基，所以我们找到的所有 $u_i$ 其实可以构成一组正交基，并张成一个低维子空间。
+
+\
+#rect[
+  (proof by Lagrange multipliers) :
+  \
+  $
+    max_(u) u^T Sigma_(x x) u, #h(1.5em) s.t.#h(0.5em) u^T u = 1
+  $
+
+  $
+                      cal(L)(u, lambda) & = u^T Sigma_(x x) u + lambda(u^T u - 1) \
+         (partial cal(L)) / (partial u) & = (Sigma_(x x)^T + Sigma_(x x)) u + 2 lambda u \
+    (partial cal(L)) / (partial lambda) & = u^T u - 1
+  $
+
+  ~~~~令两个偏导数均为0且代入约束条件，且由于 $Sigma_(x x) = Sigma_(x x)^T$，于是得：
+  $
+    Sigma_(x x) u = - lambda u
+  $
+
+  ~~~~即 $u$ 就是 $Sigma_(x x)$ 的特征向量。
+]
+~~~~~
+
+~~~~综上，如果我们要用一个一维子空间来近似数据，那么选取的子空间方向就应当是这个对应的特征向量的方向。
+
+\
+~~~~General case :\
+~~~~If wish to project data to $k$-dimensional space, then we set $u_1, u_2, dots, u_k$ to be the top-$k$ eigenvectors of $Sigma_(x x)$
+
+
+\
+\
+
+~~~~Now let's say we have a very high dimensional dataset :
+$
+  x^((i)) in RR^(n) #h(1em) ("say" n = 1000)\
+$
+~~~~And we want to reduce the dimension from $n$ to $k$ ($k<<n$), so we need to find :
+$
+  u_1, u_2, dots, u_k in RR^n #h(1em) ("say" k = 10)
+$
+
+~~~~Then we'll have a new representation :
+$
+  x^((i)) -> mat(u_1^T x^((i)); u_2^T x^((i)); dots.v; u_k^T x^((i))) = y^((i)) in RR^k
+$
+
+~~~~So now instead of using a thousand number to represent the training example, we're using 10 numbers to represent each training data point. （注意：现在的10维空间是由10个特征向量所构建，因此原向量 $x$ 在每一维上的坐标就是在这一维对应特征向量上的投影大小）
+
+~~~~If we want to go back from $y^((i))$ to $x^((i))$, it turns out that :
+$
+  x^((i)) approx y^((i))_1 u_1 + y^((i))_2 u_2 + dots + y^((i))_k u_k in RR^n
+$
+
+\
+
+（此处仍有一个待解决问题：为什么在数据预处理要减去均值并除以标准差？？？几何直观上的意义？？？）
 
 
 
 
+\
+\
+
+- Applications
+\
+① Visualization :\
+~~~~Project from $n$-$D$ to $1$-$D$ or $2$-$D$.
+
+\
+
+② Compression for ML efficiency :\
+
+$
+  x^((i)) in RR^(10000) arrow^("compress") y^((i)) in RR^(1000)
+$
+~~~~Running the learning algorithm on a lower dimensional dataset can be more efficient.
+
+\
+
+③ Reduce overfitting (questionable) \
+~~~~Maybe regularization is more suitable in this case.
+
+\
+
+④ Outlier detection (matching)\
+~~~~It was once used in gace detection, where people use PCA to project the pixel vector to a low dimension and measure the Euclidean distance betweem
+two pictures. However, we tend to not use it anymore.
+
+\
+\
+
+- Rule of Thumb
+\
+~~~~Before using PCA, consider just using the original data
+\
+~~~~If do use PCA, then in test set we use the same set of eigenvectors that we've found in train set.
+
+\
 
 
+~~~~Note that the direction of each eigenvector is really unstable, and if we study the meaning of directions that'll usually be hallucinations. But the resulting subspace is usually stable.
 
 
+\
+\
+#rect[
+  ~~~~Now we can draw a comparison graph between the 4 unsupervised leaning algorithms that we've learned :
+
+  model $P(x)$ : e.g. anomaly detection\
+  non-probabilistic : e.g. compression, visualization
+  \
+
+  ① factor analysis model : model $P(x)$ + "Subspaces"\
+  ② PCA : non-probabilistic + "Subspaces"\
+  ③ Mixture of Guassiana : model $P(x)$ + "Clusters"\
+  ④ K-means : non-probabilistic + "Clusters"
+]
 
 
+\
+\
+
+- How to choose $k$ ? (dimension of the subspace)
+\
+
+~~~~If we choose :
+$
+  (lambda_1 + dots + lambda_k) / (lambda_1 + dots + lambda_k + dots + lambda_n) = c %
+$
+
+~~~~Then we'd say : *_"retained c% of vairiance of the data"_*. (usually we take c% = 0.90 / 0.95 / 0.98 ...)
 
 
+\
+\
+\
+\
+\
+
+=== 2. Independent Component Analysis (ICA)
+\
+~~~~e.g. It can be used for seperating different independent voices from a mixed sample.
+
+~~~~Suppose we have this original source :
+$
+  s in RR^n #h(1em) (n "speakers")\
+  s^((i))_j = "signal from speaker" j "at time" i
+$
+
+#figure(
+  image("images/Lec16_ICA_eg1_source.jpg", width: 50%),
+  caption: [source signals],
+)
+
+~~~~Note that the two samples are timestamps consistent.
+
+\
+
+~~~~We observe :
+$
+  x^((i)) = A s^((i)), #h(1em) x^((i)) in RR^n\
+  (n "microphones")
+$
+
+~~~~Each microphone captures a linear combination of the different voices from the speakers.
+
+$
+  x^((i))_j = "recording of microphone" j "at time" t, #h(1em) j=1,dots, n
+$
+
+~~~~Because :
+$
+  x^((i))_j = sum_(k) A_(j k) s^((i))_k
+$
+
+~~~~Our goal is to find
+$
+  W = A^(-1)
+$
+so that
+$
+  s^((i)) = W x^((i))
+$
+
+~~~~The whole algorithm is given the data $x$ to find the matrix $W$.
+（注意：标准 ICA 中我们要求 $s$ 与 $x$ 的维数相同，因为这样线性变换矩阵是一个仿真，才有可能可逆！）
+\
+\
+
+Notation :
+
+$
+  W = mat(——w_1^T——; ——w_2^T——; dots.v; ——w_n^T——)
+$
+
+~~~~So $s^((i))_j = w_j^T x^((i))$.
+
+\
+
+~~~~A visualization of ICA :
+\
+~~~~Let's say the data resources are (2 speakers in total) : (each timmstamp a speaker is emitting a random number between (-1, 1))
+
+#figure(
+  image("images/Lec16_ICA_illustration_source.jpg", width: 60%),
+  caption: [pre-processed source],
+)
+
+\
+
+~~~~Recall how does $s$ change to $x$ :
+$
+  x^((i)) = A s^((i))
+$
+which means take each $s$ through a linear transformation and end up to be $x$ :
+
+#figure(
+  image("images/Lec16_ICA_illustration_observe.jpg", width: 60%),
+  caption: [observed data],
+)
 
 
+~~~~So in practice we are observing $x$'s and try to find a linear transformation that change $x$ back to $s$.
+\
+\
 
+~~~~Two ambiguities :\
+① *_Axis Ambiguity_* : When we do the linear tranformation from $x$ back to $s$, we don't know the order of $s_1、 s_2$, so we just come to the resources with a random order.
+\
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+② *_Sign Ambiguity_* : In linear transformation, flipping happens. So when we come back to the resources, we may end up with $plus.minus s_1, plus.minus s_2$. But in practice that doesn't really matter.
 
 
 
