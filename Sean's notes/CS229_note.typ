@@ -7030,13 +7030,12 @@ $
 == Principal Component Analysis & Independent Component Analysis (partial)
 \
 
-=== 1.
-
+=== 1. PCA
+\
 ~~~~Recall that factor analysis model tries to model $P(x)$ which is in a high-dimensional space. However, PCA is not a probablistic and it doesn't model $P(x)$, but it still allows you to figure out whether the data is in a low-dimensional space.
 
 \
-
-- Example
+- *Example*
 
 ~~~~We have an unlabeled dataset : ${x^((1)), dots, x^((m))} in RR^(n)$. We want to reduce the dimension from $n$ to $k$, $k<<n$.
 \
@@ -7051,21 +7050,21 @@ $
 ~~~~PCA 算法要做的事情就是找到图中那个倾斜的维度方向，那也是数据变化的主轴。并且在与之正交的维度上只会存在一些噪声。当我们把数据投影到这根轴上，二维数据就会变为一维数据。
 
 \
-\
 
-- Pre-processing
-\
+- *Pre-processing*
+
 ~~~~Before PCA, we're gonna process our data :
+\
 
-① Zero out mean :
+*① Zero out mean* :
 $
        mu & = 1/m sum_(i=1)^m x^((i)) \
   x^((i)) & <- x^((i)) - mu
 $
 
-\
 
-② Standardize variance to 1 :
+
+*② Standardize variance to 1 *:
 $
   sigma^2_j & = 1/m sum_(i=1)^m (x^((i))_j)^2 \
   x^((i))_j & <- x^((i))_j / sigma_j
@@ -7073,7 +7072,7 @@ $
 
 \
 
-- PCA illustration & intuition
+*- PCA illustration & intuition*
 
 ~~~~If we've got this dataset after pre-processing :
 
@@ -7148,12 +7147,14 @@ $
 ~~~~综上，如果我们要用一个一维子空间来近似数据，那么选取的子空间方向就应当是这个对应的特征向量的方向。
 
 \
-~~~~General case :\
+\
+\
+
+- *General case* \
 ~~~~If wish to project data to $k$-dimensional space, then we set $u_1, u_2, dots, u_k$ to be the top-$k$ eigenvectors of $Sigma_(x x)$
 
 
-\
-\
+
 
 ~~~~Now let's say we have a very high dimensional dataset :
 $
@@ -7185,15 +7186,17 @@ $
 
 \
 \
-
-- Applications
 \
-① Visualization :\
+\
+
+- *Applications*
+\
+*① Visualization* :\
 ~~~~Project from $n$-$D$ to $1$-$D$ or $2$-$D$.
 
 \
 
-② Compression for ML efficiency :\
+*② Compression for ML efficiency* :\
 
 $
   x^((i)) in RR^(10000) arrow^("compress") y^((i)) in RR^(1000)
@@ -7202,50 +7205,61 @@ $
 
 \
 
-③ Reduce overfitting (questionable) \
+*③ Reduce overfitting (questionable)* \
 ~~~~Maybe regularization is more suitable in this case.
 
 \
 
-④ Outlier detection (matching)\
+*④ Outlier detection (matching)*\
 ~~~~It was once used in gace detection, where people use PCA to project the pixel vector to a low dimension and measure the Euclidean distance betweem
 two pictures. However, we tend to not use it anymore.
 
-\
-\
 
-- Rule of Thumb
-\
+
+- - *Rule of Thumb*
+
 ~~~~Before using PCA, consider just using the original data
 \
 ~~~~If do use PCA, then in test set we use the same set of eigenvectors that we've found in train set.
 
 \
 
-
 ~~~~Note that the direction of each eigenvector is really unstable, and if we study the meaning of directions that'll usually be hallucinations. But the resulting subspace is usually stable.
 
+#figure(
+  image("images/Lec16_unstable_eigenvectors.jpg", width: 70%),
+  caption: [unstable eigenvectors and stable span],
+)
 
 \
 \
-#rect[
-  ~~~~Now we can draw a comparison graph between the 4 unsupervised leaning algorithms that we've learned :
-
-  model $P(x)$ : e.g. anomaly detection\
-  non-probabilistic : e.g. compression, visualization
-  \
-
-  ① factor analysis model : model $P(x)$ + "Subspaces"\
-  ② PCA : non-probabilistic + "Subspaces"\
-  ③ Mixture of Guassiana : model $P(x)$ + "Clusters"\
-  ④ K-means : non-probabilistic + "Clusters"
-]
-
-
 \
 \
 
-- How to choose $k$ ? (dimension of the subspace)
+- *Comparison*
+
+~~~~Now we can draw a comparison table and sort the properties of the 4 unsupervised learning algorithms that we've learned:
+
+#table(
+  columns: (auto, 1fr, 1fr),
+  stroke: 0.5pt,
+  inset: 6pt,
+  align: (left, left, left),
+  table.header(
+    [*Model type*], [*model $P(x)$* \ e.g. anomaly detection], [*non-probabilistic* \ e.g. compression, visualization]
+  ),
+  [*Subspaces*], [#text(fill: red)[*factor analysis model*]], [#text(fill: red)[*PCA*]],
+  [*Clusters*], [#text(fill: red)[*Mixture of Gaussians*]], [#text(fill: red)[*K-means*]],
+)
+
+
+
+
+
+
+#pagebreak()
+
+- *How to choose $k$ ?* (dimension of the subspace)
 \
 
 ~~~~If we choose :
@@ -7261,9 +7275,13 @@ $
 \
 \
 \
+\
+\
+\
 
 === 2. Independent Component Analysis (ICA)
 \
+- *Cocktail party example to lead in*
 ~~~~e.g. It can be used for seperating different independent voices from a mixed sample.
 
 ~~~~Suppose we have this original source :
@@ -7279,7 +7297,8 @@ $
 
 ~~~~Note that the two samples are timestamps consistent.
 
-\
+
+
 
 ~~~~We observe :
 $
@@ -7289,9 +7308,8 @@ $
 
 ~~~~Each microphone captures a linear combination of the different voices from the speakers.
 
-$
-  x^((i))_j = "recording of microphone" j "at time" t, #h(1em) j=1,dots, n
-$
+*$ x^((i))_j = "recording of microphone" j "at time" t, \
+#h(1em) j=1,dots, n $*
 
 ~~~~Because :
 $
@@ -7306,13 +7324,17 @@ so that
 $
   s^((i)) = W x^((i))
 $
+\
+\
+\
 
+- *ICA goal*
 ~~~~The whole algorithm is given the data $x$ to find the matrix $W$.
-（注意：标准 ICA 中我们要求 $s$ 与 $x$ 的维数相同，因为这样线性变换矩阵是一个仿真，才有可能可逆！）
+（注意：标准 ICA 中我们要求 $s$ 与 $x$ 的维数相同，因为这样线性变换矩阵是一个方阵，才有可能矩阵可逆！）
 \
 \
 
-Notation :
+*_Notation_* :
 
 $
   W = mat(——w_1^T——; ——w_2^T——; dots.v; ——w_n^T——)
@@ -7320,10 +7342,10 @@ $
 
 ~~~~So $s^((i))_j = w_j^T x^((i))$.
 
-\
 
-~~~~A visualization of ICA :
-\
+#pagebreak()
+- *A visualization of ICA* :
+
 ~~~~Let's say the data resources are (2 speakers in total) : (each timmstamp a speaker is emitting a random number between (-1, 1))
 
 #figure(
@@ -7348,12 +7370,24 @@ which means take each $s$ through a linear transformation and end up to be $x$ :
 ~~~~So in practice we are observing $x$'s and try to find a linear transformation that change $x$ back to $s$.
 \
 \
+\
+\
+\
+\
+\
+\
+\
+\
 
-~~~~Two ambiguities :\
+- - *Two ambiguities* :\
 ① *_Axis Ambiguity_* : When we do the linear tranformation from $x$ back to $s$, we don't know the order of $s_1、 s_2$, so we just come to the resources with a random order.
 \
 
 ② *_Sign Ambiguity_* : In linear transformation, flipping happens. So when we come back to the resources, we may end up with $plus.minus s_1, plus.minus s_2$. But in practice that doesn't really matter.
+
+
+
+
 
 
 
