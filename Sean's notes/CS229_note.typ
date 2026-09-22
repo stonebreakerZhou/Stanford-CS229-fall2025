@@ -7391,6 +7391,421 @@ which means take each $s$ through a linear transformation and end up to be $x$ :
 
 
 
+
 #pagebreak()
+
+
+
+
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XVII]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+
+== Independent Component Analysis
+\
+outline :\
+- CDFs (cumulative distribution functions)
+- ICA model
+
+\
+\
+\
+
+- *Two Ambiguities*
+
+~~~~In the last part of Lec16, we know that the goal of ICA algorithm is to find the unmixing matrix $W$ that :
+
+$
+  s^((i)) = W x^((i))
+$
+
+
+~~~~承接上个 Lec 最后的 ICA 部分，我们说到 ICA 具有 permutation ambiguity + scaling ambiguity. （对观测使用 unmixing matrix $W$ 之后我们得到的 $s$ 的各个维度无法区分顺序；对观测作用 $W$ 之后得到的 $s$ 各维度可能是被放缩之后的。
+
+\
+
+(additional proof of the two ambiguities) :\
+
+① *Permutation ambiguity :*\
+~~~~This corresponds to permutation matrixs : \
+e.g.
+$
+  P = mat(
+    0, 1, 0;
+    1, 0, 0; 0, 0, 1
+  )
+$
+
+~~~~In ICA, if we've verify an unmixing matrix $W$ that is already got :
+$
+  s = W x
+$
+~~~~Then if we let :
+$
+  W' = P W
+$
+~~~~那么 $W'$ 同样是一个该数据下的合理解混矩阵。也就是说，我们可以对 $W$ 进行任意的行列变换得到的仍是满足条件的解混矩阵。
+\
+\
+
+② *Scaling ambiguity :*
+\
+~~~~在 ICA 中我们可以对已经得到的满足条件的 $W$ 的某一行/列进行放缩，得到的矩阵仍然是一个满足条件的解混矩阵。
+\
+~~~~这样，我们最后分离出来的独立成分（独立声源）只是会被相应地缩放相应倍数（非零），依然满足 ICA 目标。
+
+
+\
+\
+\
+\
+\
+\
+\
+
+- *Pre-processing*
+
+~~~~说明了 ICA 的两个 ambiguity ，现在来讲解的 ICA 前续步骤：
+
+① 均值归零 (zero out means) ：
+$
+  x -> x - E[x]
+$
+~~~~由于建模为：
+$
+  s = W x
+$
+~~~~因此我们预计将分离出来的独立源也均值归零：
+$
+  E[s] = arrow(0)
+$
+
+\
+
+② 白化 (standardize variance to 1)
+$
+  x -> x / sigma_x
+$
+~~~~这一步将观测数据方差归一化。由于均值归零后的 $x$ 的协方差矩阵为 $Sigma_x = E[x^T x]$ ($in RR^n$, symmetric)
+
+
+
+~~~~先将协方差矩阵 $Sigma_x$ 做特征值分解 ：
+$
+  Sigma_x = U Lambda U^T \ (Lambda "is diagonal", U "is orthogonal")
+$
+
+~~~~我们可以直接使用一个矩阵 $V$ 将 $x$ 方差变换为 $I$。 使用：
+$
+  V = Lambda^(-1/2) U^T
+$
+(验证：
+$ "Cov"(V x) & = V Sigma_x V^T \
+           & = Lambda^(-1/2) U^T Sigma_x U Lambda^(-1/2 T) \
+           & = Lambda^(-1/2) U^T U Lambda U^T U Lambda^(-1/2) \
+           & = Lambda^(-1/2) (U^T U) Lambda (U^T U) Lambda^(-1/2) \
+           & = Lambda^(-1/2) I Lambda I Lambda^(-1/2) \
+           & = I $)
+
+~~~~所以对 $x$ 使用 $V$ 之后 $V x$ 协方差矩阵变为 $I$。
+
+\
+
+~~~~原始观测数据 $x$ 经过上述 ①均值归零 ②白化 两个先续处理步骤之后均值变为 $arrow(0)$，方差变为单位矩阵 $I$。
+
+\
+\
+\
+\
+\
+
+- *ICA Restrictions : non-Guassian output*
+
+~~~~下面开始 ICA 模型的正式处理部分。
+\
+~~~~首先回顾 ICA 目标 ：寻找最优的解混矩阵 $W$ 以从观测数据还原至原始独立声源 ：
+$
+  s = W x
+$
+
+~~~~假如我们对于最后的参数 $W$ 有一个估计取值，怎样知道这个估计是否好呢？这依赖于我们对于原始独立数据的先验假设：
+$
+  s_1, s_2, dots, s_n "are independent"
+$
+
+~~~~这是我们最为核心的判别法则，即对于估计的参数 $W$ 对应的输出 $s$，我们将根据其各维度的独立性判断当前的参数 $W$ 选取的好坏。
+
+\
+
+~~~~然而当前判据并不足够，我们需要考虑下面一种特殊情况：\
+
+~~~~假设选取一个 $W$ 以后，我们得到的 $s$ 各个维度服从一个多元正态分布 $s tilde cal(N)(arrow(0), I)$，（由于前面对 $x$ 均值归零，故$E[s] = arrow(0)$；由于 scaling ambiguity 所以我们可以这样假设 $s$ 各维所满足的多元正态分布协方差矩阵为 $I$），我们能否判断当前选取的参数 $W$ 好坏？
+
+\
+
+~~~~首先，因为 $s tilde cal(N)(arrow(0), I)$，故此时输出的 $s$ 各维依然相互独立，满足我们最开始给出的判别方法。那么此时选取的 $W$ 一定最好吗？（抛开 permutation + scaling 变体）\
+~~~~但是，我们发现此时满足条件的参数矩阵 $W$ 具有无数多个！（抛开 permutation + scaling 这些变体）
+\
+
+~~~~事实上，我们可以找到这些所有的参数矩阵 $W'$ 与现在我们已选择的这个参数矩阵 $W$ 之间的关系 :
+$
+  W' = R W \
+  R "是任意的正交矩阵"
+$
+
+\
+证明：\
+~~~~若已有：
+$
+  s = W x tilde cal(N)(arrow(0), I)
+$
+~~~~那么更改参数矩阵后:
+$
+  s' = W'x = R W x & tilde cal(N)(R arrow(0), R I R^T) \
+                   & tilde cal(N)(arrow(0), I)
+$
+
+~~~~注意：正交矩阵作用到一个 $cal(N)(0,I)$ 的变量上面后结果仍然是 $cal(N)(0, I)$！
+\
+
+~~~~补充：我们可以借助正交矩阵线性变换的几何直观来理解：\
+~~~~正交矩阵只包含 翻转 + 旋转 这两种操作及其复合，而以二维正态分布为例，其等高线为圆，翻转、旋转后等高线不变，故输出的分布不变！
+
+#figure(
+  image("images/Lec17_standard_Guassian_contour.jpg", width: 80%),
+  caption: [standard Guassian contour],
+)
+
+\
+~~~~因此，如果输出 $s$ 满足多元高斯分布，那么我们可以在已有参数 $W$ 基础上选择无数多种参数矩阵 $W$，最后的输出依然一样。因此此时参数的选取有无数种！无法找到正确的那一类参数 $W$ !
+\
+
+（补充知识：实际上我们除了独立性还有其他损失函数可以评判，但在此处高斯分布依然会导致损失评判恒为0而使得无法找到最优的参数 $W$）
+
+\
+\
+
+~~~~为避免上述情况产生，我们对于最后的输出 $s$ 加一条评判标准，即输出的 $s$ 不应满足多维高斯分布！
+\
+
+
+
+
+
+
+
+~~~~In both ICA and PCA, we'll first zero out means. Assume here we get $s_1, s_2$ for later processing.
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *CDF + Probability Relation*
+
+~~~~Given that, we'll develop ICA under the circumstance that the data is non-Guassian. We first have to figure out what's the density of $s$.
+
+\
+
+~~~~补充知识：An equivalent way to represent the probability of the density of continous random variables is via CDF :
+$
+  F(s) = P(S <= s) \ (S "is a random variable" "and" s "is a constant")
+$
+
+~~~~$e.g$ : If $S$ is a Guassian random variable, then the CDF is the function that increases from 0 to 1.
+
+#figure(
+  image("images/Lec17_CDF-to-PDF.jpg", width: 100%),
+  caption: [CDF to PDF],
+)
+
+（这其实就是概率论中密度函数与分布函数关系）
+
+
+~~~~In ICA, instead of specifying a PDF for the source data, we're gonna choose a specified CDF that is not a Guassian density CDF.
+\
+~~~~Choose a CDF $F(s)$, then the density of $s$ is $P_s (s)$ ;
+$
+  x & = A s = W^(-1) s \
+  s & = W x
+$
+
+\
+
+~~~~A tempting method is that maybe we can compute the density of $x$ in this way ?
+$
+  P_x (x) = P_s (W x) #h(1em) ("because" W x = s)
+$
+~~~~However, it turns out that this is incorrect as it works only for discrete probability distributions and is incorrect for continuous probability densities.
+
+(Why we have to find the density of $x$ ?\
+Because in training, we can only observe $x$ for finding the maximum likelihood estimate parameters. So we need to know the density of $x$ to choose the optimal parameter $W$.)
+
+\
+
+- - *A simple illustration example*
+
+~~~~Say :
+$
+  P_s (s) = 1 {0<=s<=1} #h(1em) (s tilde U(0,1))
+$
+
+~~~~Let's say :
+$
+  x = 2 s \
+  ("here" A = 2, W = 1/2, n=1("one-dimensional"))
+$
+
+~~~~Thus :
+$
+  x tilde U(0, 2)\
+  P_x (x) = 1/2dot 1{0<=x<=2}
+$
+
+~~~~Then we draw densities for $s$ and $x$ :
+
+#figure(
+  image("images/Lec17_density_s-x.jpg", width: 70%),
+  caption: [density from $s$ to $x$],
+)
+
+\
+
+~~~~More generally, the correct formula for the equality relation between $P_x (x)$ and $P_s (s)$ is :
+
+*$ P_x (x) = P_s (W x) dot |W| $*
+$
+  |W| "is the determinant of " W
+$
+~~~~And that ensures that the distribution still normalizes to 1.
+
+~~~~Note that in the simple example above, $P_x (x)$ is :
+$
+      P_x (x) & = 1/2 dot 1{0<=x<=2} \
+              & = 1{0<=1/2 x <=2} \
+  "and" 1/2 x & = s, "so we're back to" P_s (s)
+$
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+
+- *Choose $P_s (s)$ = ?*
+\
+~~~~*We need to choose a non-Guassian for $P_s (s)$.*\
+~~~~*We can choose the sigmoid function for $F(s)$* :
+$
+  F(s) = P(S <= s) = 1 / (1 + e^(-s))
+$
+
+~~~~Then we take the derivative of it and get the corresponding CDF, it turns out that it has fatter tail than Guassian. And this captures human voices or other natural phenomena better than a Guassian density as there are a larger number of extreme outliers.
+
+\
+
+~~~~Also, double-sided exponential (Laplacian distribution) turns out to be good as a choice for $P_s (s)$.
+
+
+
+\
+
+
+
+
+
+- *MLE*
+\
+~~~~现在我们进行 MLE 估计最优参数：（MLE 实质就是给定观测数据 $x$，将数据概率值参数化为待估计的参数 $W$，随后最大化这个概率来估计参数 $W$ 的最优值）\
+~~~~Because : (independence of the sources is the key assumption of ICA)
+$
+  P_s (s) = product_(i=1)^n P_s (s_i)\
+  (s "is the vector of total voice sources")\
+  (n "speakers are independent")\
+$
+
+~~~~Therefore we have :
+$
+  P_x (x) & = P_s (W x) |W| \
+          & = product_(j=1)^n P_s (W_j^T x) |W|
+$
+
+~~~~So the ICA model is as above. Here we choose $P_s ( )$ to be the CDF of sigmoid, and we express $P_x (x)$ as a function of the parameter $W$. （此时我们代入的模型假设是： $P_s$ 是 sigmoid 对应的 PDF 概率分布）
+\
+\
+
+~~~~Now the MLE :\
+$
+  ell(w) = sum_(i=1)^m log [(product_(j) P_s (W_j^T x^((i)))) |W| ]
+$
+
+~~~~Then we use stochastic gradient ascent .
+$
+  nabla_w ell(w) = mat(1 - 2g(W_1^T x); dots; 1 - 2g(W_n^T x)) x^((i) T) + (W^T)^(-1)
+$
+~~~~$g( )$ is the sigmoid function.
+
+\
+\
+\
+\
+\
+\
+\
+
+- *Recap of the whole algorithm*
+\
+~~~~① We have a whole training set of
+$
+  x^((1)), dots, x^((m))
+$
+where each of the training examples is a microphone recording.(and we can split a certain timestamp out)
+
+\
+
+~~~~② We'll initialize the unmixing $W$ randomly, and run stochastic gradient ascent. When it converges, we'll have $W$ and use it to recover the sources :
+$
+  s = W x
+$
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
+
 
 
