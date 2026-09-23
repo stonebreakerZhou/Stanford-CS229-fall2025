@@ -7453,13 +7453,13 @@ $
 $
   W' = P W
 $
-~~~~那么 $W'$ 同样是一个该数据下的合理解混矩阵。也就是说，我们可以对 $W$ 进行任意的行列变换得到的仍是满足条件的解混矩阵。
+~~~~那么 $W'$ 同样是一个该数据下的合理解混矩阵。也就是说，我们可以对 $W$ 进行任意的行变换得到的仍是满足条件的解混矩阵。
 \
 \
 
 ② *Scaling ambiguity :*
 \
-~~~~在 ICA 中我们可以对已经得到的满足条件的 $W$ 的某一行/列进行放缩，得到的矩阵仍然是一个满足条件的解混矩阵。
+~~~~在 ICA 中我们可以对已经得到的满足条件的 $W$ 的某一行进行放缩，得到的矩阵仍然是一个满足条件的解混矩阵。
 \
 ~~~~这样，我们最后分离出来的独立成分（独立声源）只是会被相应地缩放相应倍数（非零），依然满足 ICA 目标。
 
@@ -7493,9 +7493,9 @@ $
 
 ② 白化 (standardize variance to 1)
 $
-  x -> x / sigma_x
+  x <- V x, #h(1em) s.t. "Cov"(V x) = I
 $
-~~~~这一步将观测数据方差归一化。由于均值归零后的 $x$ 的协方差矩阵为 $Sigma_x = E[x^T x]$ ($in RR^n$, symmetric)
+~~~~这一步将观测数据方差归一化。由于均值归零后的 $x$ 的协方差矩阵为 $Sigma_x = E[x x^T]$ ($in RR^n$, symmetric)
 
 
 
@@ -7548,12 +7548,12 @@ $
 
 ~~~~然而当前判据并不足够，我们需要考虑下面一种特殊情况：\
 
-~~~~假设选取一个 $W$ 以后，我们得到的 $s$ 各个维度服从一个多元正态分布 $s tilde cal(N)(arrow(0), I)$，（由于前面对 $x$ 均值归零，故$E[s] = arrow(0)$；由于 scaling ambiguity 所以我们可以这样假设 $s$ 各维所满足的多元正态分布协方差矩阵为 $I$），我们能否判断当前选取的参数 $W$ 好坏？
+~~~~假设选取一个 $W$ 以后，我们得到的 $s$ 各个维度服从一个多元正态分布 $s tilde cal(N)(arrow(0), I)$，（由于前面对 $x$ 均值归零，故$E[s] = arrow(0)$；由于 scaling ambiguity 所以我们不妨可以假设 $s$ 满足的多元正态分布协方差矩阵为 $I$），此时我们能否判断当前选取的参数 $W$ 好坏？
 
 \
 
 ~~~~首先，因为 $s tilde cal(N)(arrow(0), I)$，故此时输出的 $s$ 各维依然相互独立，满足我们最开始给出的判别方法。那么此时选取的 $W$ 一定最好吗？（抛开 permutation + scaling 变体）\
-~~~~但是，我们发现此时满足条件的参数矩阵 $W$ 具有无数多个！（抛开 permutation + scaling 这些变体）
+~~~~但是，我们发现此时满足条件的参数矩阵 $W$ 具有无数多个！（即便已经抛开 permutation + scaling 所产生的变体）
 \
 
 ~~~~事实上，我们可以找到这些所有的参数矩阵 $W'$ 与现在我们已选择的这个参数矩阵 $W$ 之间的关系 :
@@ -7687,9 +7687,9 @@ $
 
 ~~~~More generally, the correct formula for the equality relation between $P_x (x)$ and $P_s (s)$ is :
 
-*$ P_x (x) = P_s (W x) dot |W| $*
+*$ P_x (x) = P_s (W x) dot |det(W)| $*
 $
-  |W| "is the determinant of " W
+  det(W) "is the determinant of " W
 $
 ~~~~And that ensures that the distribution still normalizes to 1.
 
@@ -7720,7 +7720,7 @@ $
   F(s) = P(S <= s) = 1 / (1 + e^(-s))
 $
 
-~~~~Then we take the derivative of it and get the corresponding CDF, it turns out that it has fatter tail than Guassian. And this captures human voices or other natural phenomena better than a Guassian density as there are a larger number of extreme outliers.
+~~~~Then we take the derivative of it and get the corresponding PDF, it turns out that it has fatter tail than Guassian. And this captures human voices or other natural phenomena better than a Guassian density as there are a larger number of extreme outliers.
 
 \
 
@@ -7746,8 +7746,8 @@ $
 
 ~~~~Therefore we have :
 $
-  P_x (x) & = P_s (W x) |W| \
-          & = product_(j=1)^n P_s (W_j^T x) |W|
+  P_x (x) & = P_s (W x) |det(W)| \
+          & = product_(j=1)^n P_s (W_j^T x) |det(W)|
 $
 
 ~~~~So the ICA model is as above. Here we choose $P_s ( )$ to be the CDF of sigmoid, and we express $P_x (x)$ as a function of the parameter $W$. （此时我们代入的模型假设是： $P_s$ 是 sigmoid 对应的 PDF 概率分布）
@@ -7756,7 +7756,7 @@ $
 
 ~~~~Now the MLE :\
 $
-  ell(w) = sum_(i=1)^m log [(product_(j) P_s (W_j^T x^((i)))) |W| ]
+  ell(w) = sum_(i=1)^m log [(product_(j) P_s (W_j^T x^((i)))) |det(W)| ]
 $
 
 ~~~~Then we use stochastic gradient ascent .
@@ -7782,30 +7782,12 @@ $
 where each of the training examples is a microphone recording.(and we can split a certain timestamp out)
 
 \
+（此时进行 均值归零 + 白化 预处理步骤）
+
+\
 
 ~~~~② We'll initialize the unmixing $W$ randomly, and run stochastic gradient ascent. When it converges, we'll have $W$ and use it to recover the sources :
 $
   s = W x
 $
-
-
-
-
-
-
-
-
-
-
-#pagebreak()
-
-
-
-
-
-
-
-
-
-
 
