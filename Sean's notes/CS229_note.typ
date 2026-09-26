@@ -7791,3 +7791,44 @@ $
   s = W x
 $
 
+
+
+
+
+
+
+
+
+
+
+#pagebreak()
+
+
+
+
+
+
+
+
+
+
+
+#place(top, scope: "parent", float: true)[
+  #align(center + horizon)[  // horizon 让它垂直居中页顶区域，更美观
+    #text(font: "Georgia", weight: "bold", size: 24pt)[§ Lec XVIII - XXI]  //
+    #v(0em)
+    #line(length: 100%, stroke: 1pt)  // 可选：加一条装饰线
+  ]
+]
+== RL
+\
+\
+
+~~~~这些章节内容主要为强化学习方面，而关于 RL 部分可以参见 西湖大学《强化学习的数学基础》（赵世钰）这门课程，本网站也有对其的完整的笔记（关于 RL 非常严谨详细）。于是 CS229 RL 部分将不再收录。
+
+
+
+
+
+
+
