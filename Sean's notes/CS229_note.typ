@@ -17,14 +17,14 @@
 #place(top, scope: "parent", float: true)[
   #align(center)[
     #v(0.5in)
-    #text(size: 25pt, weight: "bold")[Notes in CS229-25fall]
+    #text(size: 25pt, weight: "bold")[Notes in CS229-18fall]
     #v(1em)
     #text(size: 14pt)[Sean] \
     #text(size: 10pt)[#link("stonebreaker365@163.com")]
     #v(1em)
     #block(width: 90%, stroke: (y: 0.5pt), inset: 1em)[
       #set align(left)
-      *Abstract* --- This note records Sean's notes of Stanford course CS229 taught by Andrew Ng (25fall).
+      *Abstract* --- This note records Sean's notes of Stanford course CS229 taught by Andrew Ng (18fall). (recordings from bilibili)
     ]
     #v(2em)
   ]
